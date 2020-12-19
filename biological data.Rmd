@@ -14,20 +14,18 @@ library(knitr)
 
 # read in data
 ccomp <- read_csv("data/in2020_v08_samples.csv")
+length <- read_csv("data/IN2020_V08_Lengths_tidy.csv")
 ```
 
+```{r Length Data}
 
-load data
-```{r catch comp}
-summary(cars)
+# change to uniform names for 'deployment' and 'Accession number' and match species names in length data
+ccomp_1 <- ccomp %>% 
+  rename(Deployment = 'Operation No', Acc = 'Accession No')
+
+length_1 <- length %>% 
+  rename(Acc = 'Acc #') %>% 
+  left_join(ccomp_1, by = c("Deployment", "Acc"))
+
+ 
 ```
-
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
