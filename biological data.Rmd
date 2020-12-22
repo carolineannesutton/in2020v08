@@ -11,18 +11,30 @@ library(tidyr)
 library(tidyverse)
 library(dplyr)
 library(knitr)
+library(geosphere)
 
 # read in data
 ccomp <- read_csv("data/in2020_v08_samples.csv")
 length <- read_csv("data/IN2020_V08_Lengths_tidy.csv")
 Shot <- read_csv("data/IN2020_V08_ShotData.csv")
+
 ```
 
 ```{r Length Data}
 
 # change to uniform names for 'deployment' and 'Accession number' and match species names in length data
 ccomp_1 <- ccomp %>% 
-  rename(Deployment = 'Operation No', Acc = 'Accession No')
+  rename(Deployment = 'Operation No', Acc = 'Accession No') %>% 
+  select(Voyage, Deployment,Acc,Taxa,CAAB, weight_g =`Weight (g)`, Count) %>% 
+   mutate(ACat = ifelse(CAAB >= 37000000,"Fish",
+                        ifelse(CAAB == 36010000, "Chaetognath",
+                               ifelse(CAAB >= 35000000, "Gelatinous",
+                                      ifelse(CAAB >= 27000000, "Crustacean",
+                                             ifelse(CAAB >= 23000000, "cephalopod",
+                                                    ifelse(CAAB >=11000000, "Gelatinous",
+                          "other")))))))
+
+
 
 length_1 <- length %>% 
   rename(Acc = 'Acc #') %>% 
@@ -41,45 +53,53 @@ volume filtered (m^3)= distance (m)* net mouth area (m^2) = ((speed (m/min) * ti
 ```{r volume filtered calculation}
 Shot_1 <- Shot %>% 
   filter(Category== "Start" | Category == "Stop") %>% 
-   select(-Date,-Depth,-'Sea Water Temperature', -Author, - 'Op owner')%>%
+   select(-Date,-Depth,-'Sea Water Temperature', -Author, - 'Op owner', date = 'Real Date')%>%
+  
   #change Latitude to Decimal degrees
   mutate(Lat = Latitude) %>% 
   separate(Lat, c("deg","min","dir"),sep = " ") %>% 
   mutate(deg = as.numeric(deg)) %>% 
   mutate(dir = as.numeric(dir)) %>% 
-  mutate(lat_decdeg = deg + dir/60) %>% 
+  mutate(lat_decdeg = -deg + dir/60) %>% 
+  #mutate(Date1 = date) %>% 
+  #separate(date, c("Date","Time"), sep = " ") %>% 
+  mutate(DateR = date) %>% 
+  mutate(date = as.POSIXct(date, format = "%d/%m/%Y %H:%M")) %>% 
+  
 #change longitude to decimal degrees
 mutate(Long = Longitude) %>% 
   separate(Long, c("ldeg","lmin","ldir"),sep = " ") %>% 
   mutate(ldeg = as.numeric(ldeg)) %>% 
   mutate(ldir = as.numeric(ldir)) %>% 
-  mutate(long_decdeg = ldeg + ldir/60) %>% 
+  mutate(long_decdeg = -ldeg + ldir/60) %>% 
   select(-deg,-min,-dir,-ldeg,-lmin,-ldir)
  
 
-
+# Spitting the data into two tables one for start and one for stop
 start <- Shot_1 %>% 
   filter(Category == "Start")
 stop <- Shot_1 %>% 
   filter(Category =="Stop") %>% 
-  select('Op number', lat_decdeg,long_decdeg,Location,`Real Date`) 
+  select('Op number', lat_decdeg,long_decdeg,Location,date,DateR) 
 
-
+# combining data to have start and stop data for time and position in one row. To calculate distance and time differences
 Shot_2 <- start %>% 
  left_join(stop, by = 'Op number', suffix= c("_start", "_stop")) %>% 
   select(-Category, Site=Location_start, Net_Name = Type, Depth_Stratum = Subject,
          Deployment = 'Op number') %>% 
   separate(Depth_Stratum,c("Depth_Stratum","daylight"),sep = " ") %>% 
+  mutate(towtime = difftime(date_stop,date_start, units = "mins")) %>% 
   mutate(Speed_mpm = 1*1.852*16.667) %>% 
-  mutate(TowDuration_mins = ifelse(Depth_Stratum =="Lmeso",120,
-                                   ifelse(Depth_Stratum =="Meso", 40,
-                                          ifelse(Depth_Stratum=="Epi",40,
-                                                 ifelse(Depth_Stratum =="'Trawl Site - Marine Park'", 80,
-                                                        20))))) %>% 
-  mutate(distance_m = Speed_mpm * TowDuration_mins) %>% 
-  mutate(VolumeFiltered_m3 = distance_m * 16)
+  mutate(distance_m = Speed_mpm * towtime) %>% 
+  mutate(VolumeFiltered_m3 = distance_m * 16) %>% 
+  mutate(towtime = difftime(date_stop,date_start, units = "mins")) %>% 
   
-
+  
+  
+  #CR_Date$hours <- with(CR_Date, difftime(pos2,pos1,units="hours") )
+#CR_Date
+  
+```
 
                                    
                                    
