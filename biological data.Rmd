@@ -14,9 +14,10 @@ library(knitr)
 library(geosphere)
 
 # read in data
-ccomp <- read_csv("data/in2020_v08_samples.csv")
-length <- read_csv("data/IN2020_V08_Lengths_tidy.csv")
+ccomp <- read_csv("data/in2020_v08_samples1.csv")
+length <- read_csv("data/IN2020_V08_Lengths_Tidy.csv")
 Shot <- read_csv("data/IN2020_V08_ShotData.csv")
+deployments <- read_csv("data/in2020_v08_deployments.csv")
 
 ```
 
@@ -26,13 +27,17 @@ Shot <- read_csv("data/IN2020_V08_ShotData.csv")
 ccomp_1 <- ccomp %>% 
   rename(Deployment = 'Operation No', Acc = 'Accession No') %>% 
   select(Voyage, Deployment,Acc,Taxa,CAAB, weight_g =`Weight (g)`, Count) %>% 
-   mutate(ACat = ifelse(CAAB >= 37000000,"Fish",
+   mutate(ACat = ifelse(CAAB == 99110232, "Gelatinous",
+                        ifelse(CAAB ==99270010, "Crustacean",
+                        ifelse(CAAB == 99901011, "Gelatinous",
+                        ifelse(CAAB >= 37000000,"Fish",
                         ifelse(CAAB == 36010000, "Chaetognath",
                                ifelse(CAAB >= 35000000, "Gelatinous",
                                       ifelse(CAAB >= 27000000, "Crustacean",
-                                             ifelse(CAAB >= 23000000, "cephalopod",
+                                             ifelse(CAAB >= 23000000, "mollusc",
                                                     ifelse(CAAB >=11000000, "Gelatinous",
-                          "other")))))))
+                                                           
+                          "other"))))))))))
 
 
 
@@ -42,6 +47,12 @@ length_1 <- length %>%
   
 
 
+```
+Catch Comp summary
+```{r catch summary}
+ccomp_2 <- ccomp_1 %>% 
+  dplyr::group_by(Deployment,ACat) %>% 
+  dplyr::summarise(nos= sum(Count, na.rm = TRUE),weight = sum(weight_g, na.rm = TRUE))
 ```
 
 RMT 16 net area = 16m^2
@@ -83,25 +94,63 @@ stop <- Shot_1 %>%
   select('Op number', lat_decdeg,long_decdeg,Location,date,DateR) 
 
 # combining data to have start and stop data for time and position in one row. To calculate distance and time differences
-Shot_2 <- start %>% 
- left_join(stop, by = 'Op number', suffix= c("_start", "_stop")) %>% 
+Shot_2 <- start %>%
+  left_join(stop, by = 'Op number', suffix= c("_start", "_stop")) %>%
   select(-Category, Site=Location_start, Net_Name = Type, Depth_Stratum = Subject,
          Deployment = 'Op number') %>% 
   separate(Depth_Stratum,c("Depth_Stratum","daylight"),sep = " ") %>% 
   mutate(towtime = difftime(date_stop,date_start, units = "mins")) %>% 
   mutate(Speed_mpm = 1*1.852*16.667) %>% 
-  mutate(distance_m = Speed_mpm * towtime) %>% 
+  mutate(distance_m = Speed_mpm * towtime) %>%
+  mutate(distance_m=as.numeric(distance_m)) %>% 
   mutate(VolumeFiltered_m3 = distance_m * 16) %>% 
-  mutate(towtime = difftime(date_stop,date_start, units = "mins")) %>% 
+  mutate(towtime = difftime(date_stop,date_start, units = "mins")) 
+ 
   
-  
+tally <- Shot_2 %>% 
+  filter(Depth_Stratum == "Epi" | Depth_Stratum =="Lmeso" | Depth_Stratum == "Meso") %>% 
+  group_by(daylight, Depth_Stratum) %>% 
+  summarise(n())
   
   #CR_Date$hours <- with(CR_Date, difftime(pos2,pos1,units="hours") )
 #CR_Date
   
 ```
 
-                                   
+
+joining shot and catch data
+```{r}
+deployments_1 <- deployments %>% 
+  select(Operation, `Total Weight (g)`, Sweight_g =`Total Sorted Weight (g)`)
+
+Sol_Micro <-left_join(Shot_2,deployments_1, by= c("Deployment" = "Operation")) %>% 
+  mutate(StdW_gm3 = Sweight_g / VolumeFiltered_m3) %>% 
+  mutate(Stdw_1000gm3 = StdW_gm3*1000) %>% 
+  select(-'Message ID', -Latitude,-Longitude, -Location_stop, -date_stop)
+ # filter(Depth_Stratum == "Epi" | Depth_Stratum =="Lmeso" | Depth_Stratum == "Meso") 
+  #group_by(daylight, Depth_Stratum) %>% 
+  #summarise(n())
+```
+Plotting total catch
+```{r}
+
+ggplot(Sol_Micro,
+       mapping = aes(x = as.factor(Depth_Stratum), 
+                     y = Sweight))+
+                
+  geom_col(aes((fill=)))+
+  facet_grid(~daylight)
+  
+```
+Figures
+```{r}
+
+Day_Depth <- Sol_Micro %>% 
+  #filter(Depth_Stratum == "Epi" | Depth_Stratum =="Lmeso" | Depth_Stratum == "Meso") 
+  group_by(daylight,Depth_Stratum) %>% 
+  summarise(n(), WSorted_g = mean(Sweight,na.rm = TRUE),sd= sd(Sweight, na.rm = TRUE))
+```
+
                                    
                                   
  
@@ -112,30 +161,6 @@ write.csv(Shot_2,"Results/shotdata.csv")
  
 `
 
-spread by start stop
 
-
-Shot_3 <- Shot_2 %>% 
-  mutate(Speed_kph = 1*1.852) %>% 
-  mutate(TowDuration_mins = ifelse(stratum =="Lmeso",120,40)) %>% 
-  # volume filtered = distance * net mouth area = ((speed * time towed) * net area)
-  mutate(distance_spd = 1 * 16.667*TowDuration_mins) 
-
-
-  mutate(VF_spd= distance_spd*16)
-#mutate(VolumeFiltered_spd =  (* 1 * 16))
     
-    
-```{r spread the shot data}
 
-shot_2 <- Shot_1 %>% 
-  select(-Depth,-'Sea Water Temperature', -Author, - 'Op owner')
-    #pivot_wider(names_from = Category,values_from = c(Latitude, Longitude,'Real Date'))
-start <- shot_2 %>% 
-  filter(Category == "Start")
-stop <- shot_2 %>% 
-  filter(Category =="Stop") %>% 
-  select('Op number', Latitude,Longitude,Location,`Real Date`)
-Shot_3 <- start %>% 
- left_join(stop, by = 'Op number', suffix= c("_start", "_stop"))
-```
