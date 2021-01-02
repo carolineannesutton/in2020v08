@@ -39,9 +39,10 @@ ccomp_1 <- ccomp %>%
                                                            
                           "other"))))))))))
 
+species_list <- ccomp_1 %>% 
+  distinct(Taxa,.keep_all = TRUE)
 
-
-length_1 <- length %>% 
+fvgtr rghyt6u7jm87hblength_1 <- length %>% 
   rename(Acc = 'Acc #') %>% 
   left_join(ccomp_1, by = c("Deployment", "Acc"))
   
@@ -123,23 +124,37 @@ joining shot and catch data
 deployments_1 <- deployments %>% 
   select(Operation, `Total Weight (g)`, Sweight_g =`Total Sorted Weight (g)`)
 
+
 Sol_Micro <-left_join(Shot_2,deployments_1, by= c("Deployment" = "Operation")) %>% 
   mutate(StdW_gm3 = Sweight_g / VolumeFiltered_m3) %>% 
-  mutate(Stdw_1000gm3 = StdW_gm3*1000) %>% 
-  select(-'Message ID', -Latitude,-Longitude, -Location_stop, -date_stop)
- # filter(Depth_Stratum == "Epi" | Depth_Stratum =="Lmeso" | Depth_Stratum == "Meso") 
+  mutate(Stdw_g1000m3 = StdW_gm3*1000) %>%
+  select(-'Message ID', -Latitude,-Longitude, -Location_stop, -date_stop) %>%   filter(Depth_Stratum == "Epi" | Depth_Stratum =="Lmeso" | Depth_Stratum == "Meso") 
   #group_by(daylight, Depth_Stratum) %>% 
   #summarise(n())
+
+#summary
+Sol_Micro_summary <- Sol_Micro %>% 
+  group_by(daylight,Depth_Stratum) %>% 
+  summarise(n(), mean_g1000m3 = mean(Stdw_g1000m3), sd = sd(Stdw_g1000m3))
+  
 ```
 Plotting total catch
 ```{r}
-
+# all deployments by day, depth
 ggplot(Sol_Micro,
+       mapping = aes(x = (Deployment), 
+                     y = Stdw_g1000m3))+
+geom_col(aes(fill=daylight) )+
+facet_grid(~Depth_Stratum)
+
+#deployments by depth and day
+ggplot(Sol_Micro_summary,
        mapping = aes(x = as.factor(Depth_Stratum), 
-                     y = Sweight))+
-                
-  geom_col(aes((fill=)))+
+                     y = mean_g1000m3))+
+  geom_errorbar(aes(ymin = mean_g1000m3 - sd, ymax= mean_g1000m3 + sd)) +
+geom_col()+
   facet_grid(~daylight)
+                
   
 ```
 Figures
