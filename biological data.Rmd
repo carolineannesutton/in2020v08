@@ -14,12 +14,14 @@ library(knitr)
 library(geosphere)
 
 # read in data
-ccomp <- read_csv("data/in2020_v08_samples1.csv")
+ccomp <- read_csv("data/in2020_v08_samples.csv")
 length <- read_csv("data/IN2020_V08_Lengths_Tidy.csv")
 Shot <- read_csv("data/IN2020_V08_ShotData.csv")
 deployments <- read_csv("data/in2020_v08_deployments.csv")
 
 ```
+
+
 
 ```{r Length Data}
 
@@ -27,34 +29,36 @@ deployments <- read_csv("data/in2020_v08_deployments.csv")
 ccomp_1 <- ccomp %>% 
   rename(Deployment = 'Operation No', Acc = 'Accession No') %>% 
   select(Voyage, Deployment,Acc,Taxa,CAAB, weight_g =`Weight (g)`, Count) %>% 
-   mutate(ACat = ifelse(CAAB == 99110232, "Gelatinous",
+   mutate(ACat = ifelse(CAAB == 99110232, "Tunicates",
                         ifelse(CAAB ==99270010, "Crustacean",
                         ifelse(CAAB == 99901011, "Gelatinous",
                         ifelse(CAAB >= 37000000,"Fish",
                         ifelse(CAAB == 36010000, "Chaetognath",
-                               ifelse(CAAB >= 35000000, "Gelatinous",
+                               ifelse(CAAB >= 35000000, "Tunicates",
                                       ifelse(CAAB >= 27000000, "Crustacean",
-                                             ifelse(CAAB >= 23000000, "mollusc",
-                                                    ifelse(CAAB >=11000000, "Gelatinous",
-                                                           
-                          "other"))))))))))
+                                             ifelse(CAAB>= 24000000, "Cephalopod",
+                                             ifelse(CAAB >= 23000000, "Pteropd",
+                                                    ifelse(CAAB >=11000000, "Siph_Medusa",
+                          "other"))))))))))) %>% 
+
+  #filter(Taxa =="Gooey Salps") %>% 
+  arrange(Deployment)
+
+
 
 species_list <- ccomp_1 %>% 
-  distinct(Taxa,.keep_all = TRUE)
+  distinct(Taxa,.keep_all = TRUE) %>% 
+ # filter(is.na(ACat)) %>% 
+  arrange(ACat)
 
-fvgtr rghyt6u7jm87hblength_1 <- length %>% 
+length_1 <- length %>% 
   rename(Acc = 'Acc #') %>% 
   left_join(ccomp_1, by = c("Deployment", "Acc"))
   
 
 
 ```
-Catch Comp summary
-```{r catch summary}
-ccomp_2 <- ccomp_1 %>% 
-  dplyr::group_by(Deployment,ACat) %>% 
-  dplyr::summarise(nos= sum(Count, na.rm = TRUE),weight = sum(weight_g, na.rm = TRUE))
-```
+
 
 RMT 16 net area = 16m^2
 speed of vessel on average  = 1kt *** but check with Grafana
@@ -128,7 +132,8 @@ deployments_1 <- deployments %>%
 Sol_Micro <-left_join(Shot_2,deployments_1, by= c("Deployment" = "Operation")) %>% 
   mutate(StdW_gm3 = Sweight_g / VolumeFiltered_m3) %>% 
   mutate(Stdw_g1000m3 = StdW_gm3*1000) %>%
-  select(-'Message ID', -Latitude,-Longitude, -Location_stop, -date_stop) %>%   filter(Depth_Stratum == "Epi" | Depth_Stratum =="Lmeso" | Depth_Stratum == "Meso") 
+  select(-'Message ID', -Latitude,-Longitude, -Location_stop, -date_stop) %>%   filter(Depth_Stratum == "Epi" | Depth_Stratum =="Lmeso" | Depth_Stratum == "Meso") %>% 
+  Sol_Micro_summary
   #group_by(daylight, Depth_Stratum) %>% 
   #summarise(n())
 
@@ -137,12 +142,50 @@ Sol_Micro_summary <- Sol_Micro %>%
   group_by(daylight,Depth_Stratum) %>% 
   summarise(n(), mean_g1000m3 = mean(Stdw_g1000m3), sd = sd(Stdw_g1000m3))
   
+
+Sol_Micro_summary$Depth_Stratum <- factor(as.factor(Sol_Micro_summary$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
 ```
+
+
+Catch Comp summary
+```{r catch summary}
+ccomp_2 <- ccomp_1 %>% 
+  dplyr::group_by(Deployment,ACat) %>% 
+  dplyr::summarise(nos= sum(Count, na.rm = TRUE),weight = sum(weight_g, na.rm = TRUE))
+```
+
+Catch comp linked with shot data
+```{r catch comp with shot data}
+
+ccomp_3 <- ccomp_2 %>% 
+  left_join(Shot_2, by="Deployment") %>% 
+  group_by(daylight,Depth_Stratum,ACat) %>% 
+  summarise(n(),
+            avg =round(mean(nos,na.rm = TRUE),digits = 2), 
+            sd_n = round(sd(nos, na.rm=TRUE),digits = 2),
+            weight_avg =round(mean(weight,na.rm = TRUE),digits = 2),
+            sd_w = round(sd(weight,na.rm = TRUE),digits = 2)) %>% 
+  filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") 
+  
+ccomp_3$Depth_Stratum <- factor(as.factor(ccomp_3$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
+
+
+ggplot(ccomp_3,
+       mapping = aes(x =as.factor(Depth_Stratum),
+                     y= weight_avg))+
+  geom_col(aes(fill=ACat))+
+  coord_flip()+
+  facet_grid(~daylight)
+
+```
+
+
+
 Plotting total catch
 ```{r}
 # all deployments by day, depth
 ggplot(Sol_Micro,
-       mapping = aes(x = (Deployment), 
+       mapping = aes(x = Deployment, 
                      y = Stdw_g1000m3))+
 geom_col(aes(fill=daylight) )+
 facet_grid(~Depth_Stratum)
@@ -151,11 +194,14 @@ facet_grid(~Depth_Stratum)
 ggplot(Sol_Micro_summary,
        mapping = aes(x = as.factor(Depth_Stratum), 
                      y = mean_g1000m3))+
-  geom_errorbar(aes(ymin = mean_g1000m3 - sd, ymax= mean_g1000m3 + sd)) +
+  geom_errorbar(aes(ymin = mean_g1000m3 - 0, ymax= mean_g1000m3 + sd)) +
 geom_col()+
-  facet_grid(~daylight)
+  coord_flip()+
+  facet_grid(~daylight)+
+  theme_bw()
                 
   
+
 ```
 Figures
 ```{r}
