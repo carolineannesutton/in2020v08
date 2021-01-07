@@ -69,6 +69,7 @@ volume filtered (m^3)= distance (m)* net mouth area (m^2) = ((speed (m/min) * ti
 ```{r volume filtered calculation}
 Shot_1 <- Shot %>% 
   filter(Category== "Start" | Category == "Stop") %>% 
+  filter("Op Number" != '26') %>% 
    select(-Date,-Depth,-'Sea Water Temperature', -Author, - 'Op owner', date = 'Real Date')%>%
   
   #change Latitude to Decimal degrees
@@ -88,7 +89,13 @@ mutate(Long = Longitude) %>%
   mutate(ldeg = as.numeric(ldeg)) %>% 
   mutate(ldir = as.numeric(ldir)) %>% 
   mutate(long_decdeg = -ldeg + ldir/60) %>% 
-  select(-deg,-min,-dir,-ldeg,-lmin,-ldir)
+  select(-deg,-min,-dir,-ldeg,-lmin,-ldir) %>%
+  
+  #fix up the inconsistencies in site
+  separate(Location,c("Site", "S","Cycle","Repeat")) %>% 
+  mutate(Site1 = ifelse(Site =='55',"55S",
+                       ifelse(Site == '58', "58S",Site))) %>% 
+  arrange(lat_decdeg)
  
 
 # Spitting the data into two tables one for start and one for stop
@@ -96,12 +103,12 @@ start <- Shot_1 %>%
   filter(Category == "Start")
 stop <- Shot_1 %>% 
   filter(Category =="Stop") %>% 
-  select('Op number', lat_decdeg,long_decdeg,Location,date,DateR) 
+  select('Op number', lat_decdeg,long_decdeg,Site,date,DateR) 
 
 # combining data to have start and stop data for time and position in one row. To calculate distance and time differences
 Shot_2 <- start %>%
   left_join(stop, by = 'Op number', suffix= c("_start", "_stop")) %>%
-  select(-Category, Site=Location_start, Net_Name = Type, Depth_Stratum = Subject,
+  select(-Category, Site=Site_start, Net_Name = Type, Depth_Stratum = Subject,
          Deployment = 'Op number') %>% 
   separate(Depth_Stratum,c("Depth_Stratum","daylight"),sep = " ") %>% 
   mutate(towtime = difftime(date_stop,date_start, units = "mins")) %>% 
@@ -109,15 +116,16 @@ Shot_2 <- start %>%
   mutate(distance_m = Speed_mpm * towtime) %>%
   mutate(distance_m=as.numeric(distance_m)) %>% 
   mutate(VolumeFiltered_m3 = distance_m * 16) %>% 
-  mutate(towtime = difftime(date_stop,date_start, units = "mins")) 
+  mutate(towtime = difftime(date_stop,date_start, units = "mins")) %>% 
+  filter(as.factor(Deployment) != '26')
  
   
 tally <- Shot_2 %>% 
   filter(Depth_Stratum == "Epi" | Depth_Stratum =="Lmeso" | Depth_Stratum == "Meso") %>% 
-  group_by(daylight, Depth_Stratum) %>% 
+  group_by(Site1,daylight, Depth_Stratum) %>% 
   summarise(n())
   
-  #CR_Date$hours <- with(CR_Date, difftime(pos2,pos1,units="hours") )
+#CR_Date$hours <- with(CR_Date, difftime(pos2,pos1,units="hours") )
 #CR_Date
   
 ```
