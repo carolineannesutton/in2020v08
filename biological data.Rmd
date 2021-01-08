@@ -29,19 +29,22 @@ deployments <- read_csv("data/in2020_v08_deployments.csv")
 ccomp_1 <- ccomp %>% 
   rename(Deployment = 'Operation No', Acc = 'Accession No') %>% 
   select(Voyage, Deployment,Acc,Taxa,CAAB, weight_g =`Weight (g)`, Count) %>% 
+  mutate(weight_g = ifelse(weight_g == 0,.5,weight_g)) %>% 
    mutate(ACat = ifelse(CAAB == 99110232, "Tunicates",
                         ifelse(CAAB ==99270010, "Crustacean",
-                        ifelse(CAAB == 99901011, "Gelatinous",
+                        ifelse(CAAB == 99901011, "Tunicates",
                         ifelse(CAAB >= 37000000,"Fish",
                         ifelse(CAAB == 36010000, "Chaetognath",
                                ifelse(CAAB >= 35000000, "Tunicates",
                                       ifelse(CAAB >= 27000000, "Crustacean",
                                              ifelse(CAAB>= 24000000, "Cephalopod",
-                                             ifelse(CAAB >= 23000000, "Pteropd",
-                                                    ifelse(CAAB >=11000000, "Siph_Medusa",
-                          "other"))))))))))) %>% 
+                                             ifelse(CAAB >= 23000000, "other",
+                                                    ifelse(CAAB <= 1109000, "Siphonophore",
+                                                    ifelse(CAAB >=11089999, "Medusa",
+                          "other")))))))))))) %>% 
 
-  #filter(Taxa =="Gooey Salps") %>% 
+  mutate(ACAT = ifelse(Taxa == "Spongiobranchaea australis", "Other",ACat)) %>% 
+  mutate(ACAT = ifelse(is.na, "Other",ACat)) %>% 
   arrange(Deployment)
 
 
@@ -140,8 +143,8 @@ deployments_1 <- deployments %>%
 Sol_Micro <-left_join(Shot_2,deployments_1, by= c("Deployment" = "Operation")) %>% 
   mutate(StdW_gm3 = Sweight_g / VolumeFiltered_m3) %>% 
   mutate(Stdw_g1000m3 = StdW_gm3*1000) %>%
-  select(-'Message ID', -Latitude,-Longitude, -Location_stop, -date_stop) %>%   filter(Depth_Stratum == "Epi" | Depth_Stratum =="Lmeso" | Depth_Stratum == "Meso") %>% 
-  Sol_Micro_summary
+  select(-'Message ID', -Latitude,-Longitude, -Site_stop, -date_stop) %>%   filter(Depth_Stratum == "Epi" | Depth_Stratum =="Lmeso" | Depth_Stratum == "Meso")
+  
   #group_by(daylight, Depth_Stratum) %>% 
   #summarise(n())
 
@@ -158,27 +161,43 @@ Sol_Micro_summary$Depth_Stratum <- factor(as.factor(Sol_Micro_summary$Depth_Stra
 Catch Comp summary
 ```{r catch summary}
 ccomp_2 <- ccomp_1 %>% 
-  dplyr::group_by(Deployment,ACat) %>% 
-  dplyr::summarise(nos= sum(Count, na.rm = TRUE),weight = sum(weight_g, na.rm = TRUE))
+  dplyr::group_by(Deployment,ACat,Taxa) %>% 
+  dplyr::summarise(nos= sum(Count, na.rm = TRUE),weight_g = sum(weight_g, na.rm = TRUE))
 ```
 
-Catch comp linked with shot data
-```{r catch comp with shot data}
+Catch comp linked with shot data - ACat
+```{r catch comp with shot data - Acoustic Categories}
 
 ccomp_3 <- ccomp_2 %>% 
   left_join(Shot_2, by="Deployment") %>% 
+  mutate(Weight_Std_gm3 = weight_g / VolumeFiltered_m3) %>% 
+  mutate(Abd_Std_nosm3 = nos / VolumeFiltered_m3) %>% 
+  select(Site =Site1,daylight,Depth_Stratum,Deployment,ACat,Taxa,
+         nos,weight_g,Weight_Std_gm3,Abd_Std_nosm3,
+         datetime_UTC_start = date_start,datetime_UTC_stop = date_stop, 
+         lat_decdeg_start, long_decdeg_start, lat_decdeg_stop, long_decdeg_stop, VolumeFiltered_m3)
+
+write.csv(ccomp_3,"Results/IN2020_V08_CatchComp.csv")
+  
+``` 
+
+
+
+Catch comp grouped for summary graph
+```{r summary graph by Acat}
+ccomp_4 <-ccomp_3 %>% 
   group_by(daylight,Depth_Stratum,ACat) %>% 
   summarise(n(),
             avg =round(mean(nos,na.rm = TRUE),digits = 2), 
             sd_n = round(sd(nos, na.rm=TRUE),digits = 2),
-            weight_avg =round(mean(weight,na.rm = TRUE),digits = 2),
-            sd_w = round(sd(weight,na.rm = TRUE),digits = 2)) %>% 
+            weight_avg =round(mean(weight_g,na.rm = TRUE),digits = 2),
+            sd_w = round(sd(weight_g,na.rm = TRUE),digits = 2)) %>% 
   filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") 
   
 ccomp_3$Depth_Stratum <- factor(as.factor(ccomp_3$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
 
 
-ggplot(ccomp_3,
+ggplot(ccomp_4,
        mapping = aes(x =as.factor(Depth_Stratum),
                      y= weight_avg))+
   geom_col(aes(fill=ACat))+
