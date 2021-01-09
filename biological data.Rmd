@@ -137,10 +137,11 @@ tally <- Shot_2 %>%
 joining shot and catch data
 ```{r}
 deployments_1 <- deployments %>% 
-  select(Operation, `Total Weight (g)`, Sweight_g =`Total Sorted Weight (g)`)
+  select(Operation, Tweight_g =`Total Weight (g)`, Sweight_g =`Total Sorted Weight (g)`)
 
 
-Sol_Micro <-left_join(Shot_2,deployments_1, by= c("Deployment" = "Operation")) %>% 
+
+Sol_Micro <-left_join(Shot_2,deployments_1, by= c("Deployment" = "Operation")) %>%  
   mutate(StdW_gm3 = Sweight_g / VolumeFiltered_m3) %>% 
   mutate(Stdw_g1000m3 = StdW_gm3*1000) %>%
   select(-'Message ID', -Latitude,-Longitude, -Site_stop, -date_stop) %>%   filter(Depth_Stratum == "Epi" | Depth_Stratum =="Lmeso" | Depth_Stratum == "Meso")
@@ -150,8 +151,10 @@ Sol_Micro <-left_join(Shot_2,deployments_1, by= c("Deployment" = "Operation")) %
 
 #summary
 Sol_Micro_summary <- Sol_Micro %>% 
-  group_by(daylight,Depth_Stratum) %>% 
-  summarise(n(), mean_g1000m3 = mean(Stdw_g1000m3), sd = sd(Stdw_g1000m3))
+  group_by(Site1,daylight,Depth_Stratum) %>% 
+  summarise(n(), mean_g1000m3 = mean(Stdw_g1000m3,na.rm = TRUE), sd = sd(Stdw_g1000m3,na.rm = TRUE)) %>% 
+  mutate(mean_g1000m3 = ifelse(daylight == "Night", mean_g1000m3*-1, mean_g1000m3)) %>% 
+  mutate(sd = ifelse(daylight == "Night", sd*-1, sd))
   
 
 Sol_Micro_summary$Depth_Stratum <- factor(as.factor(Sol_Micro_summary$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
@@ -174,11 +177,13 @@ ccomp_3 <- ccomp_2 %>%
   mutate(Abd_Std_nosm3 = nos / VolumeFiltered_m3) %>% 
   select(Site =Site1,daylight,Depth_Stratum,Deployment,ACat,Taxa,
          nos,weight_g,Weight_Std_gm3,Abd_Std_nosm3,
-         datetime_UTC_start = date_start,datetime_UTC_stop = date_stop, 
+         datetime_UTC_start = date_start,datetime_UTC_stop = date_stop,
          lat_decdeg_start, long_decdeg_start, lat_decdeg_stop, long_decdeg_stop, VolumeFiltered_m3)
 
 write.csv(ccomp_3,"Results/IN2020_V08_CatchComp.csv")
   
+
+#mutate(ACat = ifelse(CAAB == 99110232, "Tunicates",
 ``` 
 
 
@@ -188,12 +193,17 @@ Catch comp grouped for summary graph
 ccomp_4 <-ccomp_3 %>% 
   group_by(daylight,Depth_Stratum,ACat) %>% 
   summarise(n(),
-            avg =round(mean(nos,na.rm = TRUE),digits = 2), 
+            n =round(mean(nos,na.rm = TRUE),digits = 2), 
             sd_n = round(sd(nos, na.rm=TRUE),digits = 2),
             weight_avg =round(mean(weight_g,na.rm = TRUE),digits = 2),
-            sd_w = round(sd(weight_g,na.rm = TRUE),digits = 2)) %>% 
-  filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") 
+            sd_w = round(sd(weight_g,na.rm = TRUE),digits = 2)) %>%
   
+  filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") %>% 
+  mutate(Wgt= ifelse(daylight %in% "Night", weight_avg*-1, weight_avg)) %>%
+  mutate(sd_wgt= ifelse(daylight %in% "Night", sd_w*-1, sd_w)) %>% 
+  mutate(numbers = ifelse(daylight %in% "Night", n*-1, n)) %>% 
+  mutate(sd_numbers= ifelse(daylight %in% "Night", sd_n*-1, sd_n))
+ 
 ccomp_3$Depth_Stratum <- factor(as.factor(ccomp_3$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
 
 
@@ -217,14 +227,17 @@ ggplot(Sol_Micro,
 geom_col(aes(fill=daylight) )+
 facet_grid(~Depth_Stratum)
 
+Sol_Micro_summary$Depth_Stratum <- factor(as.factor(Sol_Micro_summary$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
+
 #deployments by depth and day
 ggplot(Sol_Micro_summary,
        mapping = aes(x = as.factor(Depth_Stratum), 
-                     y = mean_g1000m3))+
+                     y = mean_g1000m3,
+                     colour = daylight))+
   geom_errorbar(aes(ymin = mean_g1000m3 - 0, ymax= mean_g1000m3 + sd)) +
 geom_col()+
   coord_flip()+
-  facet_grid(~daylight)+
+  facet_grid(~Site1)+
   theme_bw()
                 
   
