@@ -15,7 +15,7 @@ library(geosphere)
 
 # read in data
 ccomp <- read_csv("data/in2020_v08_samples.csv")
-length <- read_csv("data/IN2020_V08_Lengths_Tidy.csv")
+length <- read_csv("data/IN2020_VO8_Lengths.csv")
 Shot <- read_csv("data/IN2020_V08_ShotData.csv")
 deployments <- read_csv("data/in2020_v08_deployments.csv")
 
@@ -23,36 +23,53 @@ deployments <- read_csv("data/in2020_v08_deployments.csv")
 
 
 
-```{r Length Data}
+```{r catch comp}
 
 # change to uniform names for 'deployment' and 'Accession number' and match species names in length data
 ccomp_1 <- ccomp %>% 
   rename(Deployment = 'Operation No', Acc = 'Accession No') %>% 
   select(Voyage, Deployment,Acc,Taxa,CAAB, weight_g =`Weight (g)`, Count,Comments,Storage_temp =`Storage temperature`,Preservative,`Container name`) %>% 
   mutate(weight_g = ifelse(weight_g == 0,.5,weight_g)) %>% 
-   mutate(ACat = ifelse(CAAB == 99110232, "Tunicates",
+   mutate(ACat = ifelse(CAAB == 99110232, "Medusa",
                         ifelse(CAAB == 99270010, "Crustacean",
                         ifelse(CAAB == 99901011, "Tunicates",
                         ifelse(CAAB >= 37000000, "Fish",
                         ifelse(CAAB == 36010000, "Chaetognath",
                         ifelse(CAAB >= 35000000, "Tunicates",
-                               ifelse(CAAB >= 28800000, "Crustacean",
-                               ifelse(CAAB >= 28704000, "Prawn",
-                                ifelse(CAAB >=27100000, "copepods",
+                        ifelse(CAAB >= 28800000, "Crustacean",
+                        ifelse(CAAB >= 28704000, "Prawn",
+                        ifelse(CAAB >= 28700000, "Krill",
+                        ifelse(CAAB >= 28399000, "Amphipods",
+                        ifelse(CAAB >= 28200000, "Isopods",
+                        ifelse(CAAB >= 28081000, "Gnathaphausia",
+                        ifelse(CAAB >= 27200000, "Copepod",
+                        ifelse(CAAB >= 27100000, "Ostocod",
                         ifelse(CAAB >= 27000000, "Crustacean",
-                        ifelse(CAAB >= 24000000, "Other",
+                        ifelse(CAAB >= 24410000, "Gymnosome",
+                        ifelse(CAAB >= 24400000, "Pteropod",
+                        ifelse(CAAB >= 24000000, "pelagic gastropod",
                         ifelse(CAAB >= 23000000, "Cephalopod",
+                        ifelse(CAAB >= 13000000, "worms",
                         ifelse(CAAB >= 13000000, "Other",
                         ifelse(CAAB >= 12000000, "Ctenophore",
                         ifelse(CAAB >= 11123002, "Medusa",
                         ifelse(CAAB >= 11090000, "Siphonophore",
                         ifelse(CAAB >=11000000, "Medusa",
-                          "Other")))))))))))))))))) %>%
+                          "Other")))))))))))))))))))))))))) %>%
   #mutate(ACAT = ifelse(Taxa == "Spongiobranchaea australis", "Other",ACat)) %>% 
   #mutate(ACAT = ifelse(is.na, "Other",ACat)) %>% 
   arrange(-CAAB)
 
-unique(ccomp_1$ACat)
+#create higher grouping
+ccomp_1 <- ccomp_1 %>% 
+  mutate(Taxa_Groups = 
+           ifelse(ACat %in% c("Tunicates","Siphonophore","Ctenophore","Medusa"), "Gelatinous",
+           ifelse(ACat%in%c("Crustacean","Prawn","Krill","Amphipods","Gnathaphausia",                          "Isopods","Gnathapahausia","Copepod","Ostacod"),"Crustacean",
+           ifelse(ACat%in%c("Gymnosome","Pteropod","pelagic gastropod","worms","Other"),                                "other",
+           ACat))))
+
+unique(paste0(ccomp_1$ACat," ",ccomp_1$Taxa_Groups))
+check <- select(ccomp_1,ACat,CAAB,Taxa)
 
 species_list <- ccomp_1 %>% 
   distinct(Taxa,.keep_all = TRUE) %>% 
@@ -79,10 +96,7 @@ Inverts <- ccomp_1 %>%
 
                      write.csv(species_list,"Results/SpeciesList.csv")
 
-length_1 <- length %>% 
-  rename(Acc = 'Acc #') %>% 
-  left_join(ccomp_1, by = c("Deployment", "Acc"))
-  
+
 
 
 ```
@@ -147,6 +161,9 @@ Shot_2 <- start %>%
   mutate(towtime = difftime(date_stop,date_start, units = "mins")) %>% 
   filter(as.factor(Deployment) != '26')
  
+Shot_3 <- Shot_2 %>% 
+  select(Site = Site1, daylight, Deployment,Depth_Stratum) 
+  
   
 tally <- Shot_2 %>% 
   filter(Depth_Stratum == "Epi" | Depth_Stratum =="Lmeso" | Depth_Stratum == "Meso") %>% 
@@ -157,7 +174,17 @@ tally <- Shot_2 %>%
 #CR_Date
   
 ```
+Length Data
+```{R Lengths}
+length_1 <- length %>% 
+  rename(Acc = 'Acc #') %>% 
+  left_join(ccomp_1, by = c("Deployment", "Acc")) %>% 
+  left_join(Shot_3, by = "Deployment") %>% 
+  select(Voyage= Voyage.x, Site, daylight, Depth_Stratum, Deployment, Acc,Species,Taxa, `Length _mm`)
 
+write.csv(length_1,"Results/IN2020_V08_Lengths.csv")
+
+```
 
 joining shot and catch data
 ```{r}
@@ -211,11 +238,6 @@ Species_by_Site <- ccomp_3 %>%
   group_by(Site) %>% 
   distinct(Taxa)
   
-  
-  
-  Speices_Site <-spread(Species_by_Site, key =  Site, value = Taxa, na.rm=TRUE)
-
-
 
 #mutate(ACat = ifelse(CAAB == 99110232, "Tunicates",
 ``` 
