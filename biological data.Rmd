@@ -7,6 +7,9 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(plyr)
+library(Rmisc)
+library(lattice)
 library(tidyr)
 library(tidyverse)
 library(dplyr)
@@ -97,9 +100,10 @@ ccomp_1 <- ccomp %>%
 #create higher grouping
 ccomp_1 <- ccomp_1 %>% 
   mutate(Taxa_Groups = 
-           ifelse(ACat %in% c("Tunicates","Siphonophore","Ctenophore","Medusa"), "Gelatinous",
+           ifelse(ACat %in% c("Siphonophore","Ctenophore","Medusa"), "Gelatinous_Active",
+                  
            ifelse(ACat%in%c("Crustacean","Prawn","Krill","Amphipods","Gnathaphausia", "Isopods",
-                            "Gnathapahausia","Copepod","Ostracod"),"Crustacean",
+                            "Gnathapahausia","Copepod","Ostracod"),"Crustaceans",
            ifelse(ACat%in%c("Gymnosome","Pteropod","pelagic gastropod","worms","Other"),"other",
            ACat))))
 
@@ -137,7 +141,6 @@ Prawns <- ccomp_1 %>%
   filter(ACat =="Prawn" & Storage_temp == "-20 degC" ) %>% 
   select(Deployment,Acc,Taxa)
  
-
 
 ```
 
@@ -312,7 +315,7 @@ TW_std <- ccomp_3 %>%
   group_by(Site, daylight,Depth_Stratum,Deployment) %>% 
     filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") %>% 
     mutate(weight_g = ifelse(daylight %in% "Night", weight_g*-1, weight_g)) %>% 
-  summarise(TWgm3 = sum(weight_g)*1000)
+  summarise(TWgm3 = sum(weight_g))
 
 
 
@@ -337,8 +340,35 @@ geom_col()+
   coord_flip()+
   facet_grid(~Site)+
   theme_bw()
+
+tw
   
 ggsave(tw,filename = "Results/tw.jpg")
+
+
+# Summary Using SummarySE
+TW_summary <- summarySE(TW_std, measurevar = "TWgm3", groupvars = c("Site", "daylight", "Depth_Stratum"))
+
+TWSum_plot <- ggplot(TW_summary,
+                     mapping = aes(x = as.factor(Depth_Stratum),
+                                   y = TWgm3, fill = daylight))+
+  scale_fill_brewer()+
+  geom_errorbar(aes(ymin = TWgm3 - sd, ymax= TWgm3 + sd),
+                width = 0.4, position = position_dodge(.05)) +
+  xlab("Depth Stratum")+
+  ylab("Standardised wet weight (g/m^3)")+
+ 
+  #  geom_errorbar(aes(ymin = Length - ci, ymax= Length + ci),
+    #            width =.7, position = pd) +
+  geom_col()+
+  coord_flip()+
+  facet_grid(~Site)+
+  theme_bw()+
+  scale_fill_manual(values=c("light blue","dark blue"))
+ 
+ 
+
+TWSum_plot
 
 ```
 
@@ -347,7 +377,7 @@ Catch comp grouped for summary graph
 NOTE This is not a good example as it averages each value - need to sum first then average for each deployment
 ```{r summary graph by Acat}
 ccomp_4 <-ccomp_3 %>% 
-  group_by(Site,daylight,Depth_Stratum,Taxa_Groups) %>% 
+  group_by(Site,daylight,Depth_Stratum,Taxa_Groups, ACat) %>% 
   summarise(n(),
             n =round(mean(nos,na.rm = TRUE),digits = 2), 
             sd_n = round(sd(nos, na.rm=TRUE),digits = 2),
