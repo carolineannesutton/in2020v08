@@ -29,7 +29,8 @@ deployments <- read_csv("data/in2020_v08_deployments.csv")
 ccomp_1 <- ccomp %>% 
   rename(Deployment = 'Operation No', Acc = 'Accession No') %>% 
   select(Voyage, Deployment,Acc,Taxa,CAAB, weight_g =`Weight (g)`, Count,Comments,Storage_temp =`Storage temperature`,Preservative,`Container name`) %>% 
-  mutate(Taxa = ifelse(Taxa =="kriffichthys andersoni","Krefftichthys anderssoni",Taxa)) %>% 
+  mutate(Taxa = ifelse(Taxa =="kriffichthys andersoni","Krefftichthys anderssoni",Taxa)) %>%
+  mutate(Taxa = ifelse(Taxa =="Aosellota","Asellota",Taxa)) %>%
   mutate(CAAB = ifelse(Taxa =="Krefftichthys anderssoni",37122754,CAAB)) %>% 
   mutate(weight_g = ifelse(weight_g == 0,0.5,weight_g)) %>% 
    mutate(ACat = ifelse(CAAB == 99110232, "Medusa",
@@ -45,7 +46,7 @@ ccomp_1 <- ccomp %>%
                         ifelse(CAAB >= 28200000, "Isopods",
                         ifelse(CAAB >= 28081000, "Gnathaphausia",
                         ifelse(CAAB >= 27200000, "Copepod",
-                        ifelse(CAAB >= 27100000, "Ostocod",
+                        ifelse(CAAB >= 27100000, "Ostracod",
                         ifelse(CAAB >= 27000000, "Crustacean",
                         ifelse(CAAB >= 24410000, "Gymnosome",
                         ifelse(CAAB >= 24400000, "Pteropod",
@@ -68,7 +69,7 @@ ccomp_1 <- ccomp %>%
                 ifelse(Taxa =="Bathylagus tenuis", "Fish",
                 ifelse(Taxa =="Iniea sp.", "Amphipods",
                 ifelse(Taxa =="Mixed Prawn larvae", "Prawn",
-                ifelse(Taxa ==" Aosellota", "Other",
+                ifelse(Taxa ==" Aosellota", "Isopods",
                 ifelse(Taxa =="Red Gelatinous", "Siphonophore",
                 ifelse(Taxa =="Pelagic worm", "Other",  
                 ifelse(Taxa =="Remainder", "Tunicates",  
@@ -79,7 +80,7 @@ ccomp_1 <- ccomp %>%
                 ifelse(Taxa =="Hydromedusa", "Medusa",    
                 ifelse(Taxa =="Spongiobranchaea australis", "Gymnosome",
                 ifelse(Taxa =="Eusirella spp", "Copepod",   
-                ifelse(Taxa =="Asellota", "Amphipods",  
+                ifelse(Taxa =="Asellota", "Isopods",  
                 ifelse(Taxa =="Phyllosoma", "Crustacean",  
                 ifelse(Taxa =="Senticaudata", "worms",
                 ifelse(Taxa =="remainder", "Tunicates",      
@@ -98,7 +99,7 @@ ccomp_1 <- ccomp_1 %>%
   mutate(Taxa_Groups = 
            ifelse(ACat %in% c("Tunicates","Siphonophore","Ctenophore","Medusa"), "Gelatinous",
            ifelse(ACat%in%c("Crustacean","Prawn","Krill","Amphipods","Gnathaphausia", "Isopods",
-                            "Gnathapahausia","Copepod","Ostacod"),"Crustacean",
+                            "Gnathapahausia","Copepod","Ostracod"),"Crustacean",
            ifelse(ACat%in%c("Gymnosome","Pteropod","pelagic gastropod","worms","Other"),"other",
            ACat))))
 
