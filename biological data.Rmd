@@ -12,9 +12,11 @@ library(Rmisc)
 library(lattice)
 library(tidyr)
 library(tidyverse)
+library(gridExtra)
 library(dplyr)
 library(knitr)
 library(geosphere)
+
 
 # read in data
 ccomp <- read_csv("data/in2020_v08_samples.csv")
@@ -39,6 +41,8 @@ ccomp_1 <- ccomp %>%
    mutate(ACat = ifelse(CAAB == 99110232, "Medusa",
                         ifelse(CAAB == 99270010, "Crustacean",
                         ifelse(CAAB == 99901011, "Tunicates",
+                        ifelse(CAAB >= 37122909, "Fish",
+                        ifelse(CAAB >= 37122000, "Fish_GB",
                         ifelse(CAAB >= 37000000, "Fish",
                         ifelse(CAAB == 36010000, "Chaetognath",
                         ifelse(CAAB >= 35000000, "Tunicates",
@@ -61,7 +65,7 @@ ccomp_1 <- ccomp %>%
                         ifelse(CAAB >= 11123002, "Medusa",
                         ifelse(CAAB >= 11090000, "Siphonophore",
                         ifelse(CAAB >=11000000, "Medusa",
-                          "Other")))))))))))))))))))))))))) %>%
+                          "Other")))))))))))))))))))))))))))) %>%
   #mutate(ACAT = ifelse(Taxa == "Spongiobranchaea australis", "Other",ACat)) %>% 
   #mutate(ACAT = ifelse(is.na, "Other",ACat)) %>% 
   mutate(ACat = ifelse(Taxa =="Larval Fish", "Fish",
@@ -101,10 +105,10 @@ ccomp_1 <- ccomp %>%
 ccomp_1 <- ccomp_1 %>% 
   mutate(Taxa_Groups = 
            ifelse(ACat %in% c("Siphonophore","Ctenophore","Medusa"), "Gelatinous_Active",
-                  
            ifelse(ACat%in%c("Crustacean","Prawn","Krill","Amphipods","Gnathaphausia", "Isopods",
                             "Gnathapahausia","Copepod","Ostracod"),"Crustaceans",
            ifelse(ACat%in%c("Gymnosome","Pteropod","pelagic gastropod","worms","Other"),"other",
+          #ifelse(ACat%in%c("Fish","Fish_GB"),"Fish",
            ACat))))
 
 unique(paste0(ccomp_1$ACat," ",ccomp_1$Taxa_Groups))
@@ -273,7 +277,7 @@ Sol_Micro_summary$Depth_Stratum <- factor(as.factor(Sol_Micro_summary$Depth_Stra
 Catch Comp summary
 ```{r catch summary}
 ccomp_2 <- ccomp_1 %>% 
-  dplyr::group_by(Deployment,ACat,Taxa_Groups,Taxa) %>% 
+  dplyr::group_by(Deployment,ACat,Taxa_Groups,Taxa,CAAB) %>% 
   dplyr::summarise(nos= sum(Count, na.rm = TRUE),weight_g = sum(weight_g, na.rm = TRUE))
 
 ccomp_AEC <- ccomp_1 %>% 
@@ -289,7 +293,7 @@ ccomp_3 <- ccomp_2 %>%
   left_join(Shot_2, by="Deployment") %>% 
   mutate(Weight_Std_gm3 = weight_g / VolumeFiltered_m3) %>% 
   mutate(Abd_Std_nosm3 = nos / VolumeFiltered_m3) %>% 
-  select(Site,daylight,Depth_Stratum,Deployment,ACat,Taxa_Groups,Taxa,
+  select(Site,daylight,Depth_Stratum,Deployment,ACat,Taxa_Groups,Taxa,CAAB,
          nos,weight_g,Weight_Std_gm3,Abd_Std_nosm3,
          datetime_UTC_start = date_start,datetime_UTC_stop = date_stop,
          lat_decdeg_start, long_decdeg_start, lat_decdeg_stop, long_decdeg_stop, VolumeFiltered_m3) 
@@ -301,6 +305,8 @@ Species_by_Site <- ccomp_3 %>%
   distinct(Taxa, .keep_all = TRUE)
   
 
+test <- ccomp_3 %>% 
+  filter(Taxa_Groups == "Fish")
 #mutate(ACat = ifelse(CAAB == 99110232, "Tunicates",
 ``` 
 
@@ -313,9 +319,10 @@ Total Standardised catch
 ```{r total std weight}
 TW_std <- ccomp_3 %>% 
   group_by(Site, daylight,Depth_Stratum,Deployment) %>% 
-    filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") %>% 
-    mutate(weight_g = ifelse(daylight %in% "Night", weight_g*-1, weight_g)) %>% 
-  summarise(TWgm3 = sum(weight_g))
+  filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") %>% 
+  #mutate(Weight_Std_gm3 = ifelse(daylight %in% "Night", Weight_Std_gm3*-1, weight_g)) %>% 
+  summarise(TWgm3 = sum(Weight_Std_gm3)) %>% 
+  mutate(TWgm3 = ifelse(daylight %in% "Night", TWgm3*-1, TWgm3)) 
 
 
 
@@ -345,7 +352,9 @@ tw
   
 ggsave(tw,filename = "Results/tw.jpg")
 
+```
 
+```{r total weight summary}
 # Summary Using SummarySE
 TW_summary <- summarySE(TW_std, measurevar = "TWgm3", groupvars = c("Site", "daylight", "Depth_Stratum"))
 
@@ -365,14 +374,227 @@ TWSum_plot <- ggplot(TW_summary,
   facet_grid(~Site)+
   theme_bw()+
   scale_fill_manual(values=c("light blue","dark blue"))
- 
- 
 
 TWSum_plot
 
 ```
 
+Summary by Acoustic Groups
 
+```{r acoustic groups summary}
+
+#group for site, day, depth - sum values
+TW_std_TAXA <- ccomp_3 %>% 
+  group_by(Site, daylight,Depth_Stratum,Taxa_Groups) %>% 
+  filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") %>% 
+  summarise(TWgm3 = sum(Weight_Std_gm3)) %>% 
+  #mutate(TWgm3 = ifelse(daylight %in% "Night", TWgm3*-1, TWgm3)) %>% 
+  arrange()
+
+TW_std_TAXA$Depth_Stratum <- factor(as.factor(TW_std_TAXA$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
+TW_std_TAXA$Site <- factor(as.factor(TW_std_TAXA$Site), levels = c("SOTS","55S","58S"))
+
+
+
+# Taxa Group Plot
+#need to group the frame by Taxa Groups 
+Taxa_TW <- TW_std_TAXA%>%
+  filter(Taxa_Groups != "other") %>% 
+  #mutate(stage = as.character(stage))%>% 
+  #mutate(Date= as.Date(Date,"%d/%m")) %>% 
+  #group_by(Depth_Stratum) %>% 
+  arrange()
+
+ggplot(Taxa_TW, aes(fill=Taxa_Groups, y =TWgm3, x = daylight))+
+  geom_bar(position = "fill",stat = "identity")
+
+TaxaEpi <- ggplot(Taxa_TW %>% 
+                    filter(Depth_Stratum == "Epi"),
+       aes(y = TWgm3,x = daylight, fill = Taxa_Groups))+
+  geom_bar(position = "fill", stat = "identity")+
+  theme(legend.position = "none")+
+  facet_grid(.~Site)+
+  scale_fill_manual(values=c("purple","grey","orange","dark blue","dark green","light pink","light blue"))+
+  ylab("Epipelagic")+
+  xlab("")
+TaxaEpi
+
+
+
+TaxaMeso <- ggplot(Taxa_TW %>% 
+                    filter(Depth_Stratum == "Meso"),
+       aes(y = TWgm3,x = daylight, fill = Taxa_Groups))+
+  geom_bar(position = "fill", stat = "identity")+
+  facet_grid(.~Site)+
+  scale_fill_manual(values=c("purple","grey","orange","dark blue","dark green","light pink","light blue"))+
+  theme(legend.position = "none")+
+  ylab("Mesopelagic")+
+  xlab("")
+TaxaMeso
+
+TaxaLMeso <- ggplot(Taxa_TW %>% 
+                    filter(Depth_Stratum == "Lmeso"),
+       aes(y = TWgm3,x = daylight, fill = Taxa_Groups))+
+  geom_bar(position = "fill", stat = "identity")+
+  facet_grid(.~Site)+
+  scale_fill_manual(values=c("purple","grey","orange","dark blue","dark green","light pink","light blue"))+
+  theme(legend.title = element_blank(),
+        legend.box = "horizontal",
+        legend.position = "bottom",
+        legend.text = element_text(size = 8),
+        legend.key.size = unit(0.3,"lines"))+
+  ylab("Lower mesopelagic")+
+  xlab("Daylight")
+TaxaLMeso
+
+grid.arrange(TaxaEpi,TaxaMeso,TaxaLMeso, ncol= 1, nrow = 3, widths = c(4), heights = c(20,20,25))
+
+```
+
+```{r taxa by site}
+TaxaSots <- ggplot(Taxa_TW %>% 
+                    filter(Site == "SOTS"),
+       aes(y = TWgm3,x = Depth_Stratum, fill = Taxa_Groups))+
+  geom_bar(position = "fill", stat = "identity")+
+  theme(legend.position = "none")+
+  facet_grid(.~daylight)+
+  scale_fill_manual(values=c("purple","grey","orange","dark blue","dark green","light pink","light blue"))+
+  theme(text = element_text(size = 9))+
+  ylab("SOTS")+
+  xlab("")
+TaxaSots
+
+Taxa55 <- ggplot(Taxa_TW %>% 
+                    filter(Site == "55S"),
+       aes(y = TWgm3,x = Depth_Stratum, fill = Taxa_Groups))+
+  geom_bar(position = "fill", stat = "identity")+
+  theme(legend.position = "none")+
+  facet_grid(.~daylight)+
+  scale_fill_manual(values=c("purple","grey","orange","dark blue","dark green","light pink","light blue"))+
+   theme(text = element_text(size = 9))+
+  ylab("55S")+
+  xlab("")
+Taxa55
+
+Taxa58 <- ggplot(Taxa_TW %>% 
+                    filter(Site == "55S"),
+       aes(y = TWgm3,x = Depth_Stratum, fill = Taxa_Groups))+
+  geom_bar(position = "fill", stat = "identity")+
+  theme(legend.position = "none")+
+  facet_grid(.~daylight)+
+  scale_fill_manual(values=c("purple","grey","orange","dark blue","dark green","light pink","light blue"))+
+  #theme_bw()+
+  theme(text = element_text(size = 9))+
+  theme(legend.title = element_blank(),
+        legend.box = "horizontal",
+        legend.position = "bottom",
+        legend.text = element_text(size = 8),
+        legend.key.size = unit(0.3,"lines"))+
+  ylab("58S")+
+  xlab("")
+Taxa58
+
+grid.arrange(TaxaSots,Taxa55,Taxa58, ncol= 1, nrow = 3, widths = c(4), heights = c(20,20,30))
+```
+
+Taxa_TW_plot <- arrangeGrob(TaxaEpi,TaxaMeso,TaxaLMeso,  nrow=3) # creates plot as an object
+Taxa_TW_plot
+
+grid.arrange(Fsh,Fsp,Msh, Msp, ncol=2, nrow=2, widths= c(5,6), heights= c(7,7)) #arrange plot into a grid (this does not save it only plots to view)
+
+f2.5 <- arrangeGrob(Fsh,Fsp,Msh, Msp, ncol=2, nrow=2, widths= c(5,6), heights= c(7,7)) # creates plot as an object
+```
+#need to group the frame by sex 
+Roughy_4 <- Roughy_1%>%
+  filter(year==2019) %>% 
+  mutate(stage = as.character(stage))%>% 
+ # mutate(Shot = as.character(Shot)) %>% 
+  mutate(Date= as.Date(Date,"%d/%m")) %>% 
+  group_by(sex)
+
+OR2019_sumFH <- Roughy_2_lengthsum %>% 
+  filter(Ground == "St Helens", sex == "F")
+OR2019_sumMH <- Roughy_2_lengthsum %>% 
+  filter(Ground == "St Helens", sex == "M")
+OR2019_sumFP <- Roughy_2_lengthsum %>% 
+  filter(Ground == "St Patricks", sex == "F")
+OR2019_sumMP <- Roughy_2_lengthsum %>% 
+  filter(Ground == "St Patricks", sex == "M")
+
+Fsh <- ggplot(Roughy_4 %>% 
+  filter(Ground == "St Helens", sex == "F"),
+  aes(x = Date, fill = stage))+
+  geom_bar(position = "fill")+
+  scale_fill_manual(values = c("yellow","orange","red","grey"))+
+  theme(axis.text=element_text(size=9))+
+ facet_grid(.~Shot, scales = "free_x", switch ="x")+
+  theme(strip.text.x = element_text(size =8),
+        panel.spacing = unit(0,"mm"))+ # remove spacing between facets
+  theme(legend.position = "none")+
+  theme(axis.title.y = element_text(size = 11))+
+   theme(axis.title.x = element_text(size = 11),  
+        axis.ticks = element_blank()) +
+  ylab("Proportion female fish")+
+  xlab("")
+
+Msh <- ggplot(Roughy_4 %>% 
+  filter(sex == "M",Ground =="St Helens"),
+  aes(x = Date, fill = stage))+
+  geom_bar(position = "fill")+
+  scale_fill_manual(values = c("yellow","orange","black","black"))+
+  theme(axis.text=element_text(size=9))+
+  facet_grid(.~Shot, scales = "free_x", switch ="x")+
+  theme(legend.position = "none",
+        strip.text.x = element_text(size =8),
+        panel.spacing = unit(0,"mm"), # remove spacing between facets
+        axis.title.x = element_text(size = 11),  
+        axis.ticks = element_blank(),
+        axis.title.y = element_text(size = 11))+
+  xlab("Shot Number and Date, St Helens")+
+  ylab("Proportion male fish")
+
+Fsp <- ggplot(Roughy_4 %>% 
+  filter(sex == "F",Ground =="St Patricks"),
+  aes(x = Date, fill = stage, ))+
+  geom_bar(position = "fill")+
+  labs(fill = "stage")+
+  scale_fill_manual(values = c("yellow","orange","red","grey"))+
+  theme(axis.text=element_text(size=9))+
+  facet_grid(.~Shot, scales = "free_x", switch ="x")+
+  theme(strip.text.x = element_text(size =8),
+        panel.spacing = unit(0,"mm"))+ # remove spacing between facets
+   theme(axis.title.x = element_text(size = 11),  
+        axis.ticks = element_blank()) +
+   ylab("")+
+   xlab("")
+
+Msp <- ggplot(Roughy_4 %>% 
+  filter(sex == "M",Ground =="St Patricks"),
+  aes(x = Date, fill = stage))+
+  geom_bar(position = "fill")+
+    labs(fill = "stage")+
+    scale_fill_manual(values = c("yellow","orange","black","black"))+
+    theme(axis.text=element_text(size=9))+
+  facet_grid(.~Shot, scales = "free_x", switch ="x")+
+    theme(strip.text.x = element_text(size =8),
+        panel.spacing = unit(0,"mm"), # remove spacing between facets
+        axis.title.x = element_text(size = 11),  
+        axis.ticks = element_blank())+
+  xlab("Shot Number and Date, St Patricks")+
+  ylab("")
+
+#plot(Fsh)
+#plot(Msh)
+#plot(Fsp)
+#plot(Msp)
+
+grid.arrange(Fsh,Fsp,Msh, Msp, ncol=2, nrow=2, widths= c(5,6), heights= c(7,7)) #arrange plot into a grid (this does not save it only plots to view)
+
+f2.5 <- arrangeGrob(Fsh,Fsp,Msh, Msp, ncol=2, nrow=2, widths= c(5,6), heights= c(7,7)) # creates plot as an object
+
+ggsave("Figures/f2.5.emf",f2.5) # saves the plot to file :)
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Catch comp grouped for summary graph
 NOTE This is not a good example as it averages each value - need to sum first then average for each deployment
 ```{r summary graph by Acat}
