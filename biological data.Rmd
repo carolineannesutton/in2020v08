@@ -342,7 +342,8 @@ tw<-ggplot(TW_std_1,
        mapping = aes(x = as.factor(Depth_Stratum), 
                      y = TW_std, fill = daylight))+
   scale_fill_brewer()+
-  #geom_errorbar(aes(ymin = sd - 0, ymax= sd + sd)) +
+  geom_errorbar(aes(ymin = TW_std - sd, ymax= TW_std + sd),
+                width = 0.4, position = position_dodge(0)) +
 geom_col()+
   coord_flip()+
   facet_grid(~Site)+
@@ -361,23 +362,24 @@ TW_summary <- summarySE(TW_std, measurevar = "TWgm3", groupvars = c("Site", "day
 TWSum_plot <- ggplot(TW_summary,
                      mapping = aes(x = as.factor(Depth_Stratum),
                                    y = TWgm3, fill = daylight))+
-  scale_fill_brewer()+
+  #scale_fill_brewer()+
   geom_errorbar(aes(ymin = TWgm3 - sd, ymax= TWgm3 + sd),
-                width = 0.4, position = position_dodge(.05)) +
+                width = 0.4, position = position_dodge(0)) +
   xlab("Depth Stratum")+
   ylab("Standardised wet weight (g/m^3)")+
- 
-  #  geom_errorbar(aes(ymin = Length - ci, ymax= Length + ci),
-    #            width =.7, position = pd) +
+  #scale_x_discrete(limits = c(-0.9,0.9))+
+  scale_fill_manual(values=c("light blue","dark blue"))+
   geom_col()+
   coord_flip()+
   facet_grid(~Site)+
-  theme_bw()+
-  scale_fill_manual(values=c("light blue","dark blue"))
+  theme_bw()
 
 TWSum_plot
+plot(TWSum_plot)
+ggsave("figures/TWeight_gm3.jpg")
 
 ```
+
 
 Summary by Acoustic Groups
 
@@ -404,6 +406,9 @@ Taxa_TW <- TW_std_TAXA%>%
   #mutate(Date= as.Date(Date,"%d/%m")) %>% 
   #group_by(Depth_Stratum) %>% 
   arrange()
+
+Taxa_TW$Depth_Stratum <- factor(as.factor(Taxa_TW$Depth_Stratum),levels = c("Epi", "Meso", "Lmeso"))
+Taxa_TW$Site <- factor(as.factor(Taxa_TW$Site), levels = c("SOTS","55S","58S"))
 
 ggplot(Taxa_TW, aes(fill=Taxa_Groups, y =TWgm3, x = daylight))+
   geom_bar(position = "fill",stat = "identity")
@@ -462,7 +467,8 @@ TaxaSots <- ggplot(Taxa_TW %>%
   theme(text = element_text(size = 9))+
   ylab("SOTS")+
   xlab("")
-TaxaSots
+plot(TaxaSots)
+ggsave("figures/TaxaSots.jpg")
 
 Taxa55 <- ggplot(Taxa_TW %>% 
                     filter(Site == "55S"),
@@ -474,7 +480,8 @@ Taxa55 <- ggplot(Taxa_TW %>%
    theme(text = element_text(size = 9))+
   ylab("55S")+
   xlab("")
-Taxa55
+plot(Taxa55)
+ggsave("figures/Taxa55.jpg")
 
 Taxa58 <- ggplot(Taxa_TW %>% 
                     filter(Site == "55S"),
@@ -492,10 +499,50 @@ Taxa58 <- ggplot(Taxa_TW %>%
         legend.key.size = unit(0.3,"lines"))+
   ylab("58S")+
   xlab("")
-Taxa58
+plot(Taxa58)
+ggsave("figures/Taxa58.jpg")
 
 grid.arrange(TaxaSots,Taxa55,Taxa58, ncol= 1, nrow = 3, widths = c(4), heights = c(20,20,30))
 ```
+Depth Distriubtion by individual taxa
+
+```{r select individual taxa}
+
+TW_std_ID_Taxa <- ccomp_3 %>% 
+  group_by(Site, daylight,Depth_Stratum,Deployment,ACat,Taxa) %>% 
+  filter(ACat=="Fish") %>% 
+ # filter(Taxa =="Lampanyctus australis") %>% 
+  filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") %>% 
+  #mutate(Weight_Std_gm3 = ifelse(daylight %in% "Night", Weight_Std_gm3*-1, weight_g)) %>% 
+  summarise(TWgm3 = sum(Weight_Std_gm3)) %>% 
+  mutate(TWgm3 = ifelse(daylight %in% "Night", TWgm3*-1, TWgm3)) %>% 
+  group_by(Site, daylight,Depth_Stratum) %>% 
+  summarise(TWgm3_avg = mean(TWgm3))
+
+TW_std_ID_Taxa$Site <- factor(as.factor(TW_std_ID_Taxa$Site), levels = c("SOTS","55S","58S"))
+TW_std_ID_Taxa$Depth_Stratum <- factor(as.factor(TW_std_ID_Taxa$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
+
+
+TaxaInd_plot <- ggplot(TW_std_ID_Taxa,
+                     mapping = aes(x = as.factor(Depth_Stratum),
+                                   y = TWgm3_avg, fill = daylight))+
+  #scale_fill_brewer()+
+  #geom_errorbar(aes(ymin = TWgm3 - sd, ymax= TWgm3 + sd),
+  #              width = 0.4, position = position_dodge(0)) +
+  xlab("Depth Stratum")+
+  ylab("Standardised wet weight (g/m^3)")+
+  #scale_x_discrete(limits = c(-0.9,0.9))+
+  scale_fill_manual(values=c("light blue","dark blue"))+
+  geom_col()+
+  coord_flip()+
+  facet_grid(~Site)+
+  theme_bw()
+
+plot(TaxaInd_plot)
+ggsave("figures/Fish.jpg")
+
+```
+
 
 Taxa_TW_plot <- arrangeGrob(TaxaEpi,TaxaMeso,TaxaLMeso,  nrow=3) # creates plot as an object
 Taxa_TW_plot
