@@ -213,7 +213,12 @@ Shot_2 <- start %>%
   mutate(distance_m=as.numeric(distance_m)) %>% 
   mutate(VolumeFiltered_m3 = distance_m * 16) %>% 
   mutate(towtime = difftime(date_stop,date_start, units = "mins")) %>% 
-  filter(as.factor(Deployment) != '26')
+  filter(as.factor(Deployment) != '26') %>% 
+  select(-"S", -"Cycle",-"Repeat") %>% 
+  arrange()
+
+write.csv(Shot_2,"Results/ShotDataFishTaxa.csv")
+
  
 Shot_3 <- Shot_2 %>% 
   select(Site = Site, daylight, Deployment,Depth_Stratum) 
@@ -383,6 +388,7 @@ ggsave("figures/TWeight_gm3.jpg")
 
 
 Summary by ACat and Taxa_Groups
+Joining Shot data to Catch Comp
 
 ```{r acoustic groups summary}
 
@@ -399,6 +405,12 @@ ccomp_5 <-ccomp_3 %>%
   group_by(Site,daylight,Depth_Stratum,Deployment, ACat) %>% 
   summarise(Nos = sum(nos), Weight_g = sum(weight_g),
             Weight_gm3 = sum(Weight_Std_gm3),Abd_nosm3 =sum(Abd_Std_nosm3))
+
+# joining Shot data to catch comp
+ccomp_6 <- ccomp_1 %>% 
+  left_join(Shot_2, by ="Deployment")
+
+write.csv(ccomp_6,"Results/CatchcompshotRaw.csv")
 ```
 
 PROPORTION Taxa_Groups
@@ -747,8 +759,82 @@ TaxaInd_plot <- ggplot(TW_std_ID_Taxa,
 plot(TaxaInd_plot)
 ggsave("figures/Prawns.jpg")
 ```
+```{r individual taxa}
+#Lamancytus australis
+TW_std_Species <- ccomp_3 %>% 
+  group_by(Site, daylight,Depth_Stratum,Deployment) %>% 
+  filter(Taxa=="Lampanyctus australis" | Taxa == "Lampanyctus sp.") %>% 
+  filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") %>% 
+  #mutate(Weight_Std_gm3 = ifelse(daylight %in% "Night", Weight_Std_gm3*-1, weight_g)) %>% 
+  summarise(TWgm3 = sum(Weight_Std_gm3)) %>% 
+  mutate(TWgm3 = ifelse(daylight %in% "Night", TWgm3*-1, TWgm3)) %>% 
+  group_by(Site, daylight,Depth_Stratum) %>% 
+  summarise(TWgm3_avg = mean(TWgm3),n(),sd=sd(TWgm3,na.rm = TRUE))
+
+TW_std_Species$Site <- factor(as.factor(TW_std_Species$Site), levels = c("SOTS","55S","58S"))
+TW_std_Species$Depth_Stratum <- factor(as.factor(TW_std_Species$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
 
 
+Species_plot <- ggplot(TW_std_Species,
+                     mapping = aes(x = as.factor(Depth_Stratum),
+                                   y = TWgm3_avg, fill = daylight))+
+    geom_errorbar(aes(ymin = TWgm3_avg - sd, ymax= TWgm3_avg + sd, colour = factor(daylight)),
+                width = 0.3, position = position_dodge(0)) +
+  #geom_errorbar(aes(ymin=y, ymax=y_upper.error), colour="blue", width = 0.1) +
+  #geom_errorbar(aes(ymin=y_lower.error, ymax=y), colour="red", width = 0.1) +
+  xlab("Depth Stratum")+
+  ylab("Standardised wet weight (g/m^3)")+
+  #scale_x_discrete(limits = c(-0.9,0.9))+
+  scale_colour_manual("daylight",values=c("light blue","dark blue"))+
+  scale_fill_manual("daylight",values=c("light blue","dark blue"))+
+  geom_col()+
+  coord_flip()+
+  facet_grid(~Site)+
+  theme_bw()
+
+plot(Species_plot)
+ggsave("figures/Laustralis.jpg")
+
+
+
+```
+
+```{r individual taxa }
+#Electrona
+TW_std_Species <- ccomp_3 %>% 
+  group_by(Site, daylight,Depth_Stratum,Deployment) %>% 
+  filter(Taxa=="Electrona antarctica" | Taxa == "	Electrona spp.") %>% 
+  filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") %>% 
+  #mutate(Weight_Std_gm3 = ifelse(daylight %in% "Night", Weight_Std_gm3*-1, weight_g)) %>% 
+  summarise(nos = sum(nos)) %>% 
+  mutate(no = ifelse(daylight %in% "Night", nos*-1, nos)) %>% 
+  group_by(Site, daylight,Depth_Stratum) %>% 
+  summarise(nos = mean(nos),n(),sd=sd(nos,na.rm = TRUE))
+
+TW_std_Species$Site <- factor(as.factor(TW_std_Species$Site), levels = c("SOTS","55S","58S"))
+TW_std_Species$Depth_Stratum <- factor(as.factor(TW_std_Species$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
+
+
+Species_plot <- ggplot(TW_std_Species,
+                     mapping = aes(x = as.factor(Depth_Stratum),
+                                   y = nos, fill = daylight))+
+    geom_errorbar(aes(ymin = nos - sd, ymax= nos + sd, colour = factor(daylight)),
+                width = 0.3, position = position_dodge(0)) +
+  #geom_errorbar(aes(ymin=y, ymax=y_upper.error), colour="blue", width = 0.1) +
+  #geom_errorbar(aes(ymin=y_lower.error, ymax=y), colour="red", width = 0.1) +
+  xlab("Depth Stratum")+
+  ylab("Standardised wet weight (g/m^3)")+
+  #scale_x_discrete(limits = c(-0.9,0.9))+
+  scale_colour_manual("daylight",values=c("light blue","dark blue"))+
+  scale_fill_manual("daylight",values=c("light blue","dark blue"))+
+  geom_col()+
+  coord_flip()+
+  facet_grid(~Site)+
+  theme_bw()
+
+plot(Species_plot)
+ggsave("figures/Electrona.jpg")
+```
 Taxa_TW_plot <- arrangeGrob(TaxaEpi,TaxaMeso,TaxaLMeso,  nrow=3) # creates plot as an object
 Taxa_TW_plot
 
