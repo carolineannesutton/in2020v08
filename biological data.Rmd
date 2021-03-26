@@ -246,10 +246,14 @@ length_1 <- length %>%
   rename(Acc = 'Acc #') %>% 
   left_join(ccomp_1, by = c("Deployment", "Acc")) %>% 
   left_join(Shot_3, by = "Deployment") %>% 
-  select(Voyage= Voyage.x, Site, daylight, Depth_Stratum, Deployment, Acc,Species,Taxa, `Length _mm`)
+  select(Voyage= Voyage.x, Site, daylight, Depth_Stratum, Deployment, Acc,Species,Taxa, `Length _mm`) %>% 
+   filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") %>% 
+  filter(`Length _mm`< 5500)
 
 write.csv(length_1,"Results/IN2020_V08_Lengths.csv")
 
+ggplot(length_1, aes(y = Depth_Stratum, x = `Length _mm`)) +
+  geom_point()
 ```
 
 joining shot and catch data
