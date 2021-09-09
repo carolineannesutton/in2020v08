@@ -5,6 +5,7 @@ date: "17/12/2020"
 output: html_document
 ---
 
+#load packages
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(plyr)
@@ -19,7 +20,7 @@ library(geosphere)
 
 
 # read in data
-ccomp <- read_csv("data/in2020_v08_samples.csv")
+ccomp <- read_csv("data/in2020_v08_samples_validation_210909.csv")
 length <- read_csv("data/IN2020_VO8_Lengths.csv")
 Shot <- read_csv("data/IN2020_V08_ShotData.csv")
 deployments <- read_csv("data/in2020_v08_deployments.csv")
@@ -27,13 +28,20 @@ deployments <- read_csv("data/in2020_v08_deployments.csv")
 ```
 
 
-
+# Standardising Catch Comp Data
 ```{r catch comp}
 
 # change to uniform names for 'deployment' and 'Accession number' and match species names in length data
 ccomp_1 <- ccomp %>% 
-  rename(Deployment = 'Operation No', Acc = 'Accession No') %>% 
-  select(Voyage, Deployment,Acc,Taxa,CAAB, weight_g =`Weight (g)`, Count,Comments,Storage_temp =`Storage temperature`,Preservative,`Container name`) %>% 
+  rename(Deployment = 'Operation No', Acc = 'Accession No', Sample_Type = `Sample Type`) %>% 
+  select(Voyage, Deployment,Acc,Acc_ed,Sample_Type,Taxa,CAAB, Taxa_ed,CAAB_ed, weight_g =`Weight (g)`, Count,Comments,Storage_temp =`Storage temperature`,Preservative,`Container name`) 
+
+```
+
+
+```{r create ACat and higher taxa grouping}
+# correct taxa data and create ACat field
+ccomp_2 <- ccomp_1 %>% 
   mutate(Taxa = ifelse(Taxa =="kriffichthys andersoni","Krefftichthys anderssoni",Taxa)) %>%
   mutate(Taxa = ifelse(Taxa =="Aosellota","Asellota",Taxa)) %>%
   mutate(CAAB = ifelse(Taxa =="Krefftichthys anderssoni",37122754,CAAB)) %>% 
@@ -97,12 +105,13 @@ ccomp_1 <- ccomp %>%
                 ifelse(Taxa =="Salpa thompsoni - solitary juv", "Tunicates", 
                 ifelse(Taxa =="Salpa thompsoni - solitary", "Tunicates", 
                        ACat))))))))))))))))))))))))))))) %>% 
-  separate(Comments, c("sub", "comment"),sep= " ") %>% 
+  #separate(Comments, c("sub", "comment"),sep= " ") %>% 
   #filter(sub != "subsample") %>% 
   arrange(-CAAB)
 
-#create higher grouping
-ccomp_1 <- ccomp_1 %>% 
+
+#create higher grouping "Taxa Groups"
+ccomp_3 <- ccomp_2 %>% 
   mutate(Taxa_Groups = 
            ifelse(ACat %in% c("Siphonophore","Ctenophore","Medusa"), "Gelatinous_Active",
            ifelse(ACat%in%c("Crustacean","Prawn","Krill","Amphipods","Gnathaphausia", "Isopods",
@@ -111,50 +120,72 @@ ccomp_1 <- ccomp_1 %>%
           #ifelse(ACat%in%c("Fish","Fish_GB"),"Fish",
            ACat))))
 
-unique(paste0(ccomp_1$ACat," ",ccomp_1$Taxa_Groups))
-check <- select(ccomp_1,ACat,CAAB,Taxa)
+#checking data
+unique(paste0(ccomp_3$ACat," ",ccomp_3$Taxa_Groups))
+check <- select(ccomp_3,ACat,CAAB,Taxa)
+```
+updating data from ANFC
+```{r adding fish taxa data}
+# if Taxa_ed is NA then replace with Taxa otherwise use Taxa_ed
+ccomp_4 <- ccomp_3 %>% 
+  mutate(Taxa_updated = ifelse(is.na(Taxa_ed), Taxa,Taxa_ed)) %>% 
+  mutate(CAAB_updated = ifelse(is.na(CAAB_ed), CAAB,CAAB_ed))
+```
 
-species_list <- ccomp_1 %>% 
-  distinct(Taxa,.keep_all = TRUE) %>% 
-  select(ACat,Taxa,CAAB) %>% 
+filter data to exclude Subsamples, data where the Acc has been split, and Gut samples
+```{r filter for Samples only}
+#list sample types
+unique(ccomp_4$Sample_Type)
+# choose only "S" which is a full sample (not subsampele, renamedsplit or gut sample)
+ccomp_5 <- ccomp_4 %>%
+  filter(Sample_Type == "S") %>% 
+  select(Voyage,Deployment,Acc,Acc_ed,ACat,Taxa_Groups,CAAB,Taxa,CAAB_updated,Taxa_updated,Count,weight_g,Storage_temp,Preservative)
+```
+
+
+```{r data outputs}
+species_list <- ccomp_5 %>% 
+  distinct(Taxa_updated,.keep_all = TRUE) %>% 
+  select(ACat,Taxa_updated,CAAB_updated) %>% 
  # filter(is.na(ACat)) %>% 
-  arrange(CAAB)
+  arrange(CAAB_updated)
 
-fixed <-ccomp_1 %>% 
+fixed <-ccomp_3 %>% 
   filter(Preservative !="discarded onboard" & Storage_temp != "-20 degC")
   
 
-Prawns <- ccomp_1 %>% 
+Prawns <- ccomp_5 %>% 
   filter(Storage_temp == "-20 degC" & ACat == "Prawn") %>% 
   summarise(weight = sum(weight_g))
 
-Fish <- ccomp_1 %>% 
+Fish <- ccomp_5 %>% 
   filter(Storage_temp != "-20 degC" & ACat == "Fish") %>% 
   summarise(weight = sum(weight_g,na.rm = TRUE))
 
-Inverts <- ccomp_1 %>% 
+Inverts <- ccomp_5 %>% 
   filter(Storage_temp != "-20 degC" & ACat != "Fish" & ACat != "Prawns") %>% 
   summarise(weight = sum(weight_g,na.rm = TRUE))
 
   
+write.csv(species_list,"Results/SpeciesList.csv")
 
-                     write.csv(species_list,"Results/SpeciesList.csv")
 
-
-Prawns <- ccomp_1 %>% 
+Prawns <- ccomp_5 %>% 
   filter(ACat =="Prawn" & Storage_temp == "-20 degC" ) %>% 
   select(Deployment,Acc,Taxa)
  
 
 ```
+# Shot Data
 
-
+# Volume Filtered Calculation
 RMT 16 net area = 16m^2
 speed of vessel on average  = 1kt *** but check with Grafana
 time of tow = mins
 conversion of kts to kph = kts * 1.852 (kph)
 conversion of kph to mpm= kph * 16.667 (mpm)
 volume filtered (m^3)= distance (m)* net mouth area (m^2) = ((speed (m/min) * time towed (min)) * net area (m^2))
+
 ```{r volume filtered calculation}
 Shot_1 <- Shot %>% 
   filter(Category== "Start" | Category == "Stop") %>% 
@@ -201,6 +232,7 @@ stop <- Shot_1 %>%
   select('Op number', lat_decdeg,long_decdeg,Site,date,DateR) 
 
 
+##Volume Filtered by calculating distance traveled by Ships Speed and tow time
 # combining data to have start and stop data for time and position in one row. To calculate distance and time differences
 Shot_2 <- start %>%
   left_join(stop, by = 'Op number', suffix= c("_start", "_stop")) %>%
@@ -209,15 +241,15 @@ Shot_2 <- start %>%
   separate(Depth_Stratum,c("Depth_Stratum","daylight"),sep = " ") %>% 
   mutate(towtime = difftime(date_stop,date_start, units = "mins")) %>% 
   mutate(Speed_mpm = 1*1.852*16.667) %>% 
-  mutate(distance_m = Speed_mpm * towtime) %>%
-  mutate(distance_m=as.numeric(distance_m)) %>% 
-  mutate(VolumeFiltered_m3 = distance_m * 16) %>% 
+  mutate(distance_m_byspeed = Speed_mpm * towtime) %>%
+  mutate(distance_m_byspeed=as.numeric(distance_m_byspeed)) %>% 
+  mutate(VolumeFiltered_m3_speed = distance_m_byspeed * 16) %>% 
   mutate(towtime = difftime(date_stop,date_start, units = "mins")) %>% 
   filter(as.factor(Deployment) != '26') %>% 
   select(-"S", -"Cycle",-"Repeat") %>% 
   arrange()
 
-write.csv(Shot_2,"Results/ShotDataFishTaxa.csv")
+write.csv(Shot_2,"Results/IN2020_V08_Shot_startStop.csv")
 
  
 Shot_3 <- Shot_2 %>% 
@@ -244,9 +276,9 @@ Length Data
 ```{R Lengths}
 length_1 <- length %>% 
   rename(Acc = 'Acc #') %>% 
-  left_join(ccomp_1, by = c("Deployment", "Acc")) %>% 
+  left_join(ccomp_5, by = c("Deployment", "Acc")) %>% 
   left_join(Shot_3, by = "Deployment") %>% 
-  select(Voyage= Voyage.x, Site, daylight, Depth_Stratum, Deployment, Acc,Species,Taxa, `Length _mm`) %>% 
+  select(Voyage= Voyage.x, Site, daylight, Depth_Stratum, Deployment, Acc, Acc_ed, Species,Taxa, `Length _mm`) %>% 
    filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") %>% 
   filter(`Length _mm`< 5500)
 
@@ -256,7 +288,7 @@ ggplot(length_1, aes(y = Depth_Stratum, x = `Length _mm`)) +
   geom_point()
 ```
 
-joining shot and catch data
+# Joining Shot and Catch data
 ```{r}
 deployments_1 <- deployments %>% 
   select(Operation, Tweight_g =`Total Weight (g)`, Sweight_g =`Total Sorted Weight (g)`)
@@ -264,7 +296,7 @@ deployments_1 <- deployments %>%
 
 
 Sol_Micro <-left_join(Shot_2,deployments_1, by= c("Deployment" = "Operation")) %>%  
-  mutate(StdW_gm3 = Sweight_g / VolumeFiltered_m3) %>% 
+  mutate(StdW_gm3 = Sweight_g / VolumeFiltered_m3_speed) %>% 
   mutate(Stdw_g1000m3 = StdW_gm3*1000) %>%
   select(-'Message ID', -Latitude,-Longitude, -Site_stop, -date_stop) %>%   filter(Depth_Stratum == "Epi" | Depth_Stratum =="Lmeso" | Depth_Stratum == "Meso")
   
@@ -285,33 +317,33 @@ Sol_Micro_summary$Depth_Stratum <- factor(as.factor(Sol_Micro_summary$Depth_Stra
 
 Catch Comp summary
 ```{r catch summary}
-ccomp_2 <- ccomp_1 %>% 
-  dplyr::group_by(Deployment,ACat,Taxa_Groups,Taxa,CAAB) %>% 
+ccomp_6 <- ccomp_5 %>% 
+  dplyr::group_by(Deployment,ACat,Taxa_Groups,Taxa_updated,CAAB_updated) %>% 
   dplyr::summarise(nos= sum(Count, na.rm = TRUE),weight_g = sum(weight_g, na.rm = TRUE))
 
-ccomp_AEC <- ccomp_1 %>% 
-  filter(sub !="subsample" | sub !="sub") %>% 
-  dplyr::group_by(Taxa_Groups) %>% 
-  dplyr::summarise(nos= sum(Count, na.rm = TRUE),weight_kg = round(sum(weight_g, na.rm = TRUE)/1000,digits = 2))
+#ccomp_AEC <- ccomp_1 %>% 
+#  filter(sub !="subsample" | sub !="sub") %>% 
+#  dplyr::group_by(Taxa_Groups) %>% 
+ # dplyr::summarise(nos= sum(Count, na.rm = TRUE),weight_kg = round(sum(weight_g, na.rm = TRUE)/1000,digits = 2))
 ```
 
 Catch comp linked with shot data - ACat
 ```{r catch comp with shot data - Acoustic Categories}
 
-ccomp_3 <- ccomp_2 %>% 
+ccomp_7 <- ccomp_6 %>% 
   left_join(Shot_2, by="Deployment") %>% 
-  mutate(Weight_Std_gm3 = weight_g / VolumeFiltered_m3) %>% 
-  mutate(Abd_Std_nosm3 = nos / VolumeFiltered_m3) %>% 
-  select(Site,daylight,Depth_Stratum,Deployment,ACat,Taxa_Groups,Taxa,CAAB,
+  mutate(Weight_Std_gm3 = weight_g / VolumeFiltered_m3_speed) %>% 
+  mutate(Abd_Std_nosm3 = nos / VolumeFiltered_m3_speed) %>% 
+  select(Site,daylight,Depth_Stratum,Deployment,ACat,Taxa_Groups,Taxa_updated,CAAB_updated,
          nos,weight_g,Weight_Std_gm3,Abd_Std_nosm3,
          datetime_UTC_start = date_start,datetime_UTC_stop = date_stop,
-         lat_decdeg_start, long_decdeg_start, lat_decdeg_stop, long_decdeg_stop, VolumeFiltered_m3) 
+         lat_decdeg_start, long_decdeg_start, lat_decdeg_stop, long_decdeg_stop, VolumeFiltered_m3_speed) 
 
-write.csv(ccomp_3,"Results/IN2020_V08_CatchComp.csv")
+write.csv(ccomp_7,"Results/IN2020_V08_CatchComp.csv")
 
-Species_by_Site <- ccomp_3 %>% 
+Species_by_Site <- ccomp_7 %>% 
   group_by(Site) %>% 
-  distinct(Taxa, .keep_all = TRUE)
+  distinct(Taxa_updated, .keep_all = TRUE)
   
 
 test <- ccomp_3 %>% 
@@ -326,7 +358,7 @@ test <- ccomp_3 %>%
 
 Total Standardised catch
 ```{r total std weight}
-TW_std <- ccomp_3 %>% 
+TW_std <- ccomp_7 %>% 
   group_by(Site, daylight,Depth_Stratum,Deployment) %>% 
   filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") %>% 
   #mutate(Weight_Std_gm3 = ifelse(daylight %in% "Night", Weight_Std_gm3*-1, weight_g)) %>% 
@@ -399,27 +431,27 @@ Joining Shot data to Catch Comp
 #group for site, day, depth - sum values
 
 # sum via the Taxa_Groups for each deployment
-ccomp_4 <-ccomp_3 %>% 
+ccomp_TaxaGroups <-ccomp_7 %>% 
   group_by(Site,daylight,Depth_Stratum,Deployment, Taxa_Groups) %>% 
   summarise(Nos = sum(nos), Weight_g = sum(weight_g),
             Weight_gm3 = sum(Weight_Std_gm3),Abd_nosm3 =sum(Abd_Std_nosm3))
 
 # sum via ACat for each deployment
-ccomp_5 <-ccomp_3 %>% 
+ccomp_Acat <-ccomp_7 %>% 
   group_by(Site,daylight,Depth_Stratum,Deployment, ACat) %>% 
   summarise(Nos = sum(nos), Weight_g = sum(weight_g),
             Weight_gm3 = sum(Weight_Std_gm3),Abd_nosm3 =sum(Abd_Std_nosm3))
 
 # joining Shot data to catch comp
-ccomp_6 <- ccomp_1 %>% 
+ccomp_7_shot<- ccomp_1 %>% 
   left_join(Shot_2, by ="Deployment")
 
-write.csv(ccomp_6,"Results/CatchcompshotRaw.csv")
+write.csv(ccomp_7_shot,"Results/CatchcompshotRaw1.csv")
 ```
 
 PROPORTION Taxa_Groups
 ```{r Taxa_Group proportions}
-TW_std_TAXA <- ccomp_4 %>% 
+TW_std_TAXA <- ccomp_TaxaGroups %>% 
   group_by(Site, daylight,Depth_Stratum,Taxa_Groups) %>% 
   filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") %>% 
   summarise(TWgm3 = sum(Weight_gm3)) %>% 
@@ -544,7 +576,7 @@ Depth Distriubtion by individual taxa
 ```{r select individual Taxa_Groups}
 
 #Gelatinous_Active
-TW_std_ID_Taxa <- ccomp_4 %>% 
+TW_std_ID_Taxa <- ccomp_TaxaGroups %>% 
   group_by(Site, daylight,Depth_Stratum,Deployment) %>% 
   filter(Taxa_Groups=="Gelatinous_Active") %>% 
  # filter(Taxa =="Lampanyctus australis") %>% 
@@ -581,7 +613,7 @@ ggsave("figures/Gelatinous_Active.jpg")
 
 
 #Tunicates
-TW_std_ID_Taxa <- ccomp_4 %>% 
+TW_std_ID_Taxa <- ccomp_TaxaGroups %>% 
   group_by(Site, daylight,Depth_Stratum,Deployment) %>% 
   filter(Taxa_Groups=="Tunicates") %>% 
  # filter(Taxa =="Lampanyctus australis") %>% 
@@ -617,7 +649,7 @@ plot(TaxaInd_plot)
 ggsave("figures/Tunicates.jpg")
 
 #Fish_GB
-TW_std_ID_Taxa <- ccomp_4 %>% 
+TW_std_ID_Taxa <- ccomp_TaxaGroups %>% 
   group_by(Site, daylight,Depth_Stratum,Deployment) %>% 
   filter(Taxa_Groups=="Fish_GB") %>% 
  # filter(Taxa =="Lampanyctus australis") %>% 
@@ -653,7 +685,7 @@ plot(TaxaInd_plot)
 ggsave("figures/Fish_GB.jpg")
 
 #Fish
-TW_std_ID_Taxa <- ccomp_4 %>% 
+TW_std_ID_Taxa <- ccomp_TaxaGroups %>% 
   group_by(Site, daylight,Depth_Stratum,Deployment) %>% 
   filter(Taxa_Groups=="Fish") %>% 
  # filter(Taxa =="Lampanyctus australis") %>% 
@@ -691,7 +723,7 @@ ggsave("figures/Fish.jpg")
 
 
 #Krill
-TW_std_ID_Taxa <- ccomp_5 %>% 
+TW_std_ID_Taxa <- ccomp_Acat %>% 
   group_by(Site, daylight,Depth_Stratum,Deployment) %>% 
   filter(ACat=="Krill") %>% 
  # filter(Taxa =="Lampanyctus australis") %>% 
@@ -728,7 +760,7 @@ ggsave("figures/Krill.jpg")
 
 
 # Prawns
-TW_std_ID_Taxa <- ccomp_5 %>% 
+TW_std_ID_Taxa <- ccomp_Acat %>% 
   group_by(Site, daylight,Depth_Stratum,Deployment) %>% 
   filter(ACat=="Prawn") %>% 
  # filter(Taxa =="Lampanyctus australis") %>% 
@@ -1064,7 +1096,7 @@ deployments_1 <- deployments %>%
 
 
 Sol_Micro <-left_join(Shot_2,deployments_1, by= c("Deployment" = "Operation")) %>%  
-  mutate(StdW_gm3 = Sweight_g / VolumeFiltered_m3) %>% 
+  mutate(StdW_gm3 = Sweight_g / VolumeFiltered_m3_speed) %>% 
   mutate(Stdw_g1000m3 = StdW_gm3*1000) %>%
   select(-'Message ID', -Latitude,-Longitude, -Site_stop, -date_stop) %>%   
   filter(Depth_Stratum == "Epi" | Depth_Stratum =="Lmeso" | Depth_Stratum == "Meso") %>% 
