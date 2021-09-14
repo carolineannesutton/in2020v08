@@ -34,17 +34,38 @@ deployments <- read_csv("data/in2020_v08_deployments.csv")
 # change to uniform names for 'deployment' and 'Accession number' and match species names in length data
 ccomp_1 <- ccomp %>% 
   rename(Deployment = 'Operation No', Acc = 'Accession No', Sample_Type = `Sample Type`) %>% 
-  select(Voyage, Deployment,Acc,Acc_ed,Sample_Type,Taxa,CAAB, Taxa_ed,CAAB_ed, weight_g =`Weight (g)`, Count,Comments,Storage_temp =`Storage temperature`,Preservative,`Container name`) 
+  select(Voyage, Deployment,Acc,Acc_ed,Sample_Type,Taxa,CAAB, Taxa_ed,CAAB_ed, weight_g =`Weight (g)`, Count,Comments,Storage_temp =`Storage temperature`,Preservative,`Container name`) %>% 
+  # combine Taxa with Taxa_ed to create an updated Taxa Field
+  mutate(TaxaVed = ifelse(is.na(Taxa_ed), Taxa, Taxa_ed)) %>% 
+  mutate(CAABved = ifelse(is.na(CAAB_ed), CAAB,CAAB_ed))
 
+# test for duplicates in taxa
+taxa <- distinct(ccomp_1,Taxa) %>% 
+  arrange(Taxa)
+
+# modificaitons required
+# fish >  Fish
+# sp > spp
+# see code below and move to here
+# Larval fish > Larval Fish
+# Melamphaidae - undifferentiated < Melamphaidae-undifferentiated
+# Paralepididae sp. A < Paralepididae - undifferentiated
+# Remainder > remainder
+# Sepiidae - undifferentiated   <  Sepiolidae - undifferentiated
+
+
+taxa2 <- filter(ccomp_1, is.na(CAAB)) %>% 
+  distinct(Taxa)
+
+filter(ccomp, Taxa == "Aosellota")
 ```
 
 
 ```{r create ACat and higher taxa grouping}
 # correct taxa data and create ACat field
 ccomp_2 <- ccomp_1 %>% 
-  mutate(Taxa = ifelse(Taxa =="kriffichthys andersoni","Krefftichthys anderssoni",Taxa)) %>%
-  mutate(Taxa = ifelse(Taxa =="Aosellota","Asellota",Taxa)) %>%
-  mutate(CAAB = ifelse(Taxa =="Krefftichthys anderssoni",37122754,CAAB)) %>% 
+  mutate(TaxaVed = ifelse(Taxa =="Aosellota","Asellota",Taxa)) %>%
+  mutate(TaxaVed = ifelse(Taxa =="Krefftichthys anderssoni",37122754,CAAB)) %>% 
   mutate(weight_g = ifelse(weight_g == 0,0.5,weight_g)) %>% 
    mutate(ACat = ifelse(CAAB == 99110232, "Medusa",
                         ifelse(CAAB == 99270010, "Crustacean",
@@ -76,39 +97,40 @@ ccomp_2 <- ccomp_1 %>%
                           "Other")))))))))))))))))))))))))))) %>%
   #mutate(ACAT = ifelse(Taxa == "Spongiobranchaea australis", "Other",ACat)) %>% 
   #mutate(ACAT = ifelse(is.na, "Other",ACat)) %>% 
-  mutate(ACat = ifelse(Taxa =="Larval Fish", "Fish",
-                ifelse(Taxa =="Larval fish", "Fish",
-                ifelse(Taxa =="fish", "Fish",   
-                ifelse(Taxa =="Fish", "Fish",
-                ifelse(Taxa =="Eel Larvae clear", "Fish",
-                ifelse(Taxa =="Bathylagus tenuis", "Fish",
-                ifelse(Taxa =="Iniea sp.", "Amphipods",
-                ifelse(Taxa =="Mixed Prawn larvae", "Prawn",
-                ifelse(Taxa ==" Aosellota", "Isopods",
-                ifelse(Taxa =="Red Gelatinous", "Siphonophore",
-                ifelse(Taxa =="Pelagic worm", "Other",  
-                ifelse(Taxa =="Remainder", "Tunicates",  
-                ifelse(Taxa =="Spherical eggs", "Other",  
-                ifelse(Taxa =="Hyperia medusarium", "Amphipods",     
-                ifelse(Taxa =="Aphicaryon acaule", "Siphonophore",      
-                ifelse(Taxa =="Salpa thompsoni", "Tunicates",   
-                ifelse(Taxa =="Hydromedusa", "Medusa",    
-                ifelse(Taxa =="Spongiobranchaea australis", "Gymnosome",
-                ifelse(Taxa =="Eusirella spp", "Copepod",   
-                ifelse(Taxa =="Asellota", "Isopods",  
-                ifelse(Taxa =="Phyllosoma", "Crustacean",  
-                ifelse(Taxa =="Senticaudata", "worms",
-                ifelse(Taxa =="remainder", "Tunicates",      
-                ifelse(Taxa =="eggs", "Other",  
-                ifelse(Taxa =="Phronima houses", "Other",
-                ifelse(Taxa =="Salpa thompsoni - aggregate", "Tunicates", 
-                ifelse(Taxa =="Salpa thompsoni - solitary juv", "Tunicates", 
-                ifelse(Taxa =="Salpa thompsoni - solitary", "Tunicates", 
+  mutate(ACat = ifelse(TaxaVed =="Larval Fish", "Fish",
+                ifelse(TaxaVed =="Larval fish", "Fish",
+                ifelse(TaxaVed =="fish", "Fish",   
+                ifelse(TaxaVed =="Fish", "Fish",
+                ifelse(TaxaVed =="Eel Larvae clear", "Fish",
+                ifelse(TaxaVed =="Bathylagus tenuis", "Fish",
+                ifelse(TaxaVed =="Iniea sp.", "Amphipods",
+                ifelse(TaxaVed =="Mixed Prawn larvae", "Prawn",
+                ifelse(TaxaVed ==" Aosellota", "Isopods",
+                ifelse(TaxaVed =="Red Gelatinous", "Siphonophore",
+                ifelse(TaxaVed =="Pelagic worm", "Other",  
+                ifelse(TaxaVed =="Remainder", "Tunicates",  
+                ifelse(TaxaVed =="Spherical eggs", "Other",  
+                ifelse(TaxaVed =="Hyperia medusarium", "Amphipods",     
+                ifelse(TaxaVed =="Aphicaryon acaule", "Siphonophore",      
+                ifelse(TaxaVed =="Salpa thompsoni", "Tunicates",   
+                ifelse(TaxaVed =="Hydromedusa", "Medusa",    
+                ifelse(TaxaVed =="Spongiobranchaea australis", "Gymnosome",
+                ifelse(TaxaVed =="Eusirella spp", "Copepod",   
+                ifelse(TaxaVed =="Asellota", "Isopods",  
+                ifelse(TaxaVed =="Phyllosoma", "Crustacean",  
+                ifelse(TaxaVed =="Senticaudata", "worms",
+                ifelse(TaxaVed =="remainder", "Tunicates",      
+                ifelse(TaxaVed =="eggs", "Other",  
+                ifelse(TaxaVed =="Phronima houses", "Other",
+                ifelse(TaxaVed =="Salpa thompsoni - aggregate", "Tunicates", 
+                ifelse(TaxaVed =="Salpa thompsoni - solitary juv", "Tunicates", 
+                ifelse(TaxaVed =="Salpa thompsoni - solitary", "Tunicates", 
                        ACat))))))))))))))))))))))))))))) %>% 
   #separate(Comments, c("sub", "comment"),sep= " ") %>% 
   #filter(sub != "subsample") %>% 
   arrange(-CAAB)
 
+#tests
 
 #create higher grouping "Taxa Groups"
 ccomp_3 <- ccomp_2 %>% 
