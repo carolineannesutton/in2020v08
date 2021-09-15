@@ -35,37 +35,51 @@ deployments <- read_csv("data/in2020_v08_deployments.csv")
 ccomp_1 <- ccomp %>% 
   rename(Deployment = 'Operation No', Acc = 'Accession No', Sample_Type = `Sample Type`) %>% 
   select(Voyage, Deployment,Acc,Acc_ed,Sample_Type,Taxa,CAAB, Taxa_ed,CAAB_ed, weight_g =`Weight (g)`, Count,Comments,Storage_temp =`Storage temperature`,Preservative,`Container name`) %>% 
+  
+  # fix up Taxa field
+  mutate(Taxa = ifelse(Taxa == "Larval fish","Larval Fish", Taxa)) %>% 
+  mutate(Taxa = ifelse(Taxa == "fish","Fish", Taxa)) %>% 
+  mutate(Taxa = ifelse(Taxa == "Melamphaidae-undifferentiated","Melamphaidae - undifferentiated", Taxa)) %>% 
+  mutate(Taxa = ifelse(Taxa == "Paralepididae sp. A","Paralepididae - undifferentiated", Taxa)) %>%
+  mutate(Taxa = ifelse(Taxa =="Remainder", "remainder", Taxa)) %>% 
+   #mutate(Taxa = ifelse(str_detect(Taxa,"Melamphaidae-undifferentiated"), "Melamphaidae - undifferentiated",Taxa)) %>% 
+  mutate(Taxa = str_replace(Taxa, "sp\\.","spp.")) %>% 
+  mutate(Taxa = ifelse(Taxa =="Aosellota","Suborder Asellota - undifferentiated",Taxa)) %>%
+  
+   
   # combine Taxa with Taxa_ed to create an updated Taxa Field
   mutate(TaxaVed = ifelse(is.na(Taxa_ed), Taxa, Taxa_ed)) %>% 
-  mutate(CAABved = ifelse(is.na(CAAB_ed), CAAB,CAAB_ed))
+  mutate(CAABved = ifelse(is.na(CAAB_ed), CAAB,CAAB_ed)) 
+
 
 # test for duplicates in taxa
-taxa <- distinct(ccomp_1,Taxa) %>% 
-  arrange(Taxa)
+taxa <- distinct(ccomp_1,TaxaVed) %>% 
+  arrange(TaxaVed)
 
 # modificaitons required
 # fish >  Fish
 # sp > spp
-# see code below and move to here
+# see code below and move to above
 # Larval fish > Larval Fish
 # Melamphaidae - undifferentiated < Melamphaidae-undifferentiated
 # Paralepididae sp. A < Paralepididae - undifferentiated
 # Remainder > remainder
-# Sepiidae - undifferentiated   <  Sepiolidae - undifferentiated
+# Sepiidae - undifferentiated   <  Sepiolidae - undifferentiated ?? this may be correct....
 
 
 taxa2 <- filter(ccomp_1, is.na(CAAB)) %>% 
   distinct(Taxa)
 
-filter(ccomp, Taxa == "Aosellota")
+filter(ccomp, Taxa == "Krefftichthys anderssoni")
+filter(ccomp, CAAB == 37122754)
 ```
 
 
 ```{r create ACat and higher taxa grouping}
 # correct taxa data and create ACat field
 ccomp_2 <- ccomp_1 %>% 
-  mutate(TaxaVed = ifelse(Taxa =="Aosellota","Asellota",Taxa)) %>%
-  mutate(TaxaVed = ifelse(Taxa =="Krefftichthys anderssoni",37122754,CAAB)) %>% 
+  #mutate(TaxaVed = ifelse(Taxa =="Aosellota","Suborder Asellota - undifferentiated",Taxa)) %>%
+  #mutate(TaxaVed = ifelse(Taxa =="Krefftichthys anderssoni",37122754,CAAB)) %>% 
   mutate(weight_g = ifelse(weight_g == 0,0.5,weight_g)) %>% 
    mutate(ACat = ifelse(CAAB == 99110232, "Medusa",
                         ifelse(CAAB == 99270010, "Crustacean",
@@ -98,8 +112,6 @@ ccomp_2 <- ccomp_1 %>%
   #mutate(ACAT = ifelse(Taxa == "Spongiobranchaea australis", "Other",ACat)) %>% 
   #mutate(ACAT = ifelse(is.na, "Other",ACat)) %>% 
   mutate(ACat = ifelse(TaxaVed =="Larval Fish", "Fish",
-                ifelse(TaxaVed =="Larval fish", "Fish",
-                ifelse(TaxaVed =="fish", "Fish",   
                 ifelse(TaxaVed =="Fish", "Fish",
                 ifelse(TaxaVed =="Eel Larvae clear", "Fish",
                 ifelse(TaxaVed =="Bathylagus tenuis", "Fish",
@@ -131,8 +143,11 @@ ccomp_2 <- ccomp_1 %>%
   arrange(-CAAB)
 
 #tests
+filter(ccomp_2,ACat == "Fish")
+```
 
 #create higher grouping "Taxa Groups"
+```{r Taxa Groups}
 ccomp_3 <- ccomp_2 %>% 
   mutate(Taxa_Groups = 
            ifelse(ACat %in% c("Siphonophore","Ctenophore","Medusa"), "Gelatinous_Active",
