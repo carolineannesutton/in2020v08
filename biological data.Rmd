@@ -24,6 +24,8 @@ ccomp <- read_csv("data/in2020_v08_samples_validation_210915_3.csv")
 length <- read_csv("data/IN2020_VO8_Lengths.csv")
 Shot <- read_csv("data/IN2020_V08_ShotData.csv")
 deployments <- read_csv("data/in2020_v08_deployments.csv")
+MicroDB <- read_csv("data/Micronekton_CSIRO_Data_1992to2018.csv")
+ACatDATA <- read_csv("data/MicroDB_Acat_210916.csv")
 
 ```
 
@@ -155,6 +157,21 @@ ccomp_2 <- ccomp_1 %>%
 #tests
 ACat <- ccomp_2 %>% 
   distinct(ACat,Taxa_updated,CAAB_updated)
+```
+
+# Add bladder data information from Micronekton Database
+```{r adding bladder data}
+
+# Bladderdata <- MicroDB %>% 
+#   select(SPCODE, Species_Name,ACat) %>% 
+#   distinct(Species_Name,.keep_all = TRUE)
+# write_csv(Bladderdata,"results/MicroDB_Acat.csv")
+
+# select appropriate data from MicroDB
+ccomp_2_bladder <- left_join(ccomp_2, Bladderdata, by = c("Taxa_updated"= "Species_Name"))
+
+#Sol_Micro <-left_join(Shot_2,deployments_1, by= c("Deployment" = "Operation")) %>%  
+
 ```
 
 #create higher grouping "Taxa Groups"
