@@ -44,30 +44,19 @@ ccomp_1 <- ccomp %>%
   mutate(Taxa = ifelse(Taxa == "Melamphaidae-undifferentiated","Melamphaidae - undifferentiated", Taxa)) %>% 
   mutate(Taxa = ifelse(Taxa == "Paralepididae sp. A","Paralepididae - undifferentiated", Taxa)) %>%
   mutate(Taxa = ifelse(Taxa =="Remainder", "remainder", Taxa)) %>% 
-  #mutate(Taxa = ifelse(str_detect(Taxa,"Melamphaidae-undifferentiated"), "Melamphaidae - undifferentiated",Taxa)) %>% 
-  mutate(Taxa_ed = ifelse(Taxa == "Iniea sp.", "Ihlea spp.", Taxa_ed)) %>% 
-  mutate(CAAB_ed = ifelse(Taxa == "Iniea sp.", 35103904, CAAB_ed)) %>% 
-  mutate(Taxa = ifelse(Taxa =="Aosellota","Suborder Asellota - undifferentiated",Taxa)) %>%
-  mutate(Taxa = ifelse(Taxa == "Aphicaryon acaule","Amphicaryon acaule",Taxa)) %>% 
-  mutate(CAAB = ifelse(Taxa == "Amphicaryon acaule",11095003,CAAB)) %>% 
-  mutate(Taxa = ifelse(Taxa == "Krefftichthys andersoni","Krefftichthys anderssoni",Taxa)) %>% 
-  mutate(CAAB = ifelse(Taxa == "Krefftichthys anderssoni",37122754,CAAB)) %>% 
-  mutate(CAAB = ifelse(Taxa == "Bathylagus spp.",37098903,CAAB)) %>% 
-  mutate(CAAB = ifelse(Taxa == "Euphausia spp.", 28702901,CAAB)) %>%
-  mutate(CAAB = ifelse(Taxa == "Euchirella spp.", 27212903,CAAB)) %>% 
-  mutate(Taxa_ed = ifelse(Taxa_ed == "Scopelogadus beani", "Scopelogadus beanii", Taxa_ed))  %>% 
+   #mutate(Taxa = ifelse(str_detect(Taxa,"Melamphaidae-undifferentiated"), "Melamphaidae - undifferentiated",Taxa)) %>% 
   mutate(Taxa = str_replace(Taxa, "sp\\.","spp.")) %>% 
-  # combine Taxa with Taxa_ed to create an updated Taxa Field
-  mutate(CAAB_updated = ifelse(is.na(CAAB_ed), CAAB,CAAB_ed)) %>% 
-    mutate(Taxa_updated = ifelse(is.na(Taxa_ed), Taxa, Taxa_ed)) 
+  mutate(Taxa = ifelse(Taxa =="Aosellota","Suborder Asellota - undifferentiated",Taxa)) %>%
   
-
+   
+  # combine Taxa with Taxa_ed to create an updated Taxa Field
+  mutate(TaxaVed = ifelse(is.na(Taxa_ed), Taxa, Taxa_ed)) %>% 
+  mutate(CAABved = ifelse(is.na(CAAB_ed), CAAB,CAAB_ed)) 
 
 
 # test for duplicates in taxa
-taxa <- distinct(ccomp_1,Taxa,Taxa_ed,Taxa_updated, CAAB,CAAB_ed,CAAB_updated) %>% 
-#taxa <- distinct(ccomp_1,Taxa_updated,CAABVed) %>% 
-  arrange(Taxa_updated)
+taxa <- distinct(ccomp_1,TaxaVed) %>% 
+  arrange(TaxaVed)
 
 # modificaitons required
 # fish >  Fish
@@ -83,95 +72,80 @@ taxa <- distinct(ccomp_1,Taxa,Taxa_ed,Taxa_updated, CAAB,CAAB_ed,CAAB_updated) %
 taxa2 <- filter(ccomp_1, is.na(CAAB)) %>% 
   distinct(Taxa)
 
-#Tests
-#filter(ccomp, Taxa == "Asellota")
-#filter(ccomp, CAAB == 37122754)
+filter(ccomp, Taxa == "Krefftichthys anderssoni")
+filter(ccomp, CAAB == 37122754)
 ```
 
-# Adding Acoustic Category ACat
+
 ```{r create ACat and higher taxa grouping}
 # correct taxa data and create ACat field
 ccomp_2 <- ccomp_1 %>% 
+  #mutate(TaxaVed = ifelse(Taxa =="Aosellota","Suborder Asellota - undifferentiated",Taxa)) %>%
+  #mutate(TaxaVed = ifelse(Taxa =="Krefftichthys anderssoni",37122754,CAAB)) %>% 
   mutate(weight_g = ifelse(weight_g == 0,0.5,weight_g)) %>% 
-   mutate(ACat = ifelse(CAAB_updated == 99110232, "Medusa",
-                        ifelse(CAAB_updated == 99270010, "Crustacean",
-                        ifelse(CAAB_updated == 99901011, "Tunicates",
-                        ifelse(CAAB_updated >= 37122909, "Fish",
-                        ifelse(CAAB_updated >= 37122000, "Fish_GB",
-                        ifelse(CAAB_updated >= 37000000, "Fish",
-                        ifelse(CAAB_updated == 36010000, "Chaetognath",
-                        ifelse(CAAB_updated >= 35000000, "Tunicates",
-                        ifelse(CAAB_updated >= 28800000, "Crustacean",
-                        ifelse(CAAB_updated >= 28704000, "Prawn",
-                        ifelse(CAAB_updated >= 28700000, "Krill",
-                        ifelse(CAAB_updated >= 28399000, "Amphipods",
-                        ifelse(CAAB_updated >= 28200000, "Isopods",
-                        ifelse(CAAB_updated >= 28081000, "Gnathaphausia",
-                        ifelse(CAAB_updated >= 27200000, "Copepod",
-                        ifelse(CAAB_updated >= 27100000, "Ostracod",
-                        ifelse(CAAB_updated >= 27000000, "Crustacean",
-                        ifelse(CAAB_updated >= 24410000, "Gymnosome",
-                        ifelse(CAAB_updated >= 24400000, "Pteropod",
-                        ifelse(CAAB_updated >= 24000000, "pelagic gastropod",
-                        ifelse(CAAB_updated >= 23000000, "Cephalopod",
-                        ifelse(CAAB_updated >= 13000000, "worms",
-                        ifelse(CAAB_updated >= 13000000, "Other",
-                        ifelse(CAAB_updated >= 12000000, "Ctenophore",
-                        ifelse(CAAB_updated >= 11123002, "Medusa",
-                        ifelse(CAAB_updated >= 11090000, "Siphonophore",
-                        ifelse(CAAB_updated >=11000000, "Medusa",
+   mutate(ACat = ifelse(CAAB == 99110232, "Medusa",
+                        ifelse(CAAB == 99270010, "Crustacean",
+                        ifelse(CAAB == 99901011, "Tunicates",
+                        ifelse(CAAB >= 37122909, "Fish",
+                        ifelse(CAAB >= 37122000, "Fish_GB",
+                        ifelse(CAAB >= 37000000, "Fish",
+                        ifelse(CAAB == 36010000, "Chaetognath",
+                        ifelse(CAAB >= 35000000, "Tunicates",
+                        ifelse(CAAB >= 28800000, "Crustacean",
+                        ifelse(CAAB >= 28704000, "Prawn",
+                        ifelse(CAAB >= 28700000, "Krill",
+                        ifelse(CAAB >= 28399000, "Amphipods",
+                        ifelse(CAAB >= 28200000, "Isopods",
+                        ifelse(CAAB >= 28081000, "Gnathaphausia",
+                        ifelse(CAAB >= 27200000, "Copepod",
+                        ifelse(CAAB >= 27100000, "Ostracod",
+                        ifelse(CAAB >= 27000000, "Crustacean",
+                        ifelse(CAAB >= 24410000, "Gymnosome",
+                        ifelse(CAAB >= 24400000, "Pteropod",
+                        ifelse(CAAB >= 24000000, "pelagic gastropod",
+                        ifelse(CAAB >= 23000000, "Cephalopod",
+                        ifelse(CAAB >= 13000000, "worms",
+                        ifelse(CAAB >= 13000000, "Other",
+                        ifelse(CAAB >= 12000000, "Ctenophore",
+                        ifelse(CAAB >= 11123002, "Medusa",
+                        ifelse(CAAB >= 11090000, "Siphonophore",
+                        ifelse(CAAB >=11000000, "Medusa",
                           "Other")))))))))))))))))))))))))))) %>%
   #mutate(ACAT = ifelse(Taxa == "Spongiobranchaea australis", "Other",ACat)) %>% 
   #mutate(ACAT = ifelse(is.na, "Other",ACat)) %>% 
-  mutate(ACat = ifelse(Taxa_updated =="Larval Fish", "Fish",
-                ifelse(Taxa_updated =="Fish", "Fish",
-                ifelse(Taxa_updated =="Eel Larvae clear", "Fish",
-                ifelse(Taxa_updated =="Iniea sp.", "Amphipods",
-                ifelse(Taxa_updated =="Mixed Prawn larvae", "Prawn",
-                ifelse(Taxa_updated =="Suborder Asellota - undifferentiated", "Isopods",
-                ifelse(Taxa_updated =="Red Gelatinous", "Siphonophore",
-                ifelse(Taxa_updated =="Pelagic worm", "Other",  
-                ifelse(Taxa_updated =="Remainder", "Tunicates",  
-                ifelse(Taxa_updated =="Spherical eggs", "Other",  
-                ifelse(Taxa_updated =="Hyperia medusarium", "Amphipods",     
-                ifelse(Taxa_updated =="Aphicaryon acaule", "Siphonophore",      
-                ifelse(Taxa_updated =="Salpa thompsoni", "Tunicates",   
-                ifelse(Taxa_updated =="Hydromedusa", "Medusa",    
-                ifelse(Taxa_updated =="Spongiobranchaea australis", "Gymnosome",
-                ifelse(Taxa_updated =="Eusirella spp", "Copepod",   
-                ifelse(Taxa_updated =="Asellota", "Isopods",  
-                ifelse(Taxa_updated =="Phyllosoma", "Crustacean",  
-                ifelse(Taxa_updated =="Suborder Senticaudata - undifferentiated", "worms",
-                ifelse(Taxa_updated =="remainder", "Tunicates",      
-                ifelse(Taxa_updated =="eggs", "Other",  
-                ifelse(Taxa_updated =="Phronima houses", "Other",
-                ifelse(Taxa_updated =="Salpa thompsoni - aggregate", "Tunicates", 
-                ifelse(Taxa_updated =="Salpa thompsoni - solitary juv", "Tunicates", 
-                ifelse(Taxa_updated =="Salpa thompsoni - solitary", "Tunicates", 
-                ifelse(Taxa_updated == "Myctophid larvae", "Fish_GB",       
-                       ACat))))))))))))))))))))))))))) %>% 
+  mutate(ACat = ifelse(TaxaVed =="Larval Fish", "Fish",
+                ifelse(TaxaVed =="Fish", "Fish",
+                ifelse(TaxaVed =="Eel Larvae clear", "Fish",
+                ifelse(TaxaVed =="Bathylagus tenuis", "Fish",
+                ifelse(TaxaVed =="Iniea sp.", "Amphipods",
+                ifelse(TaxaVed =="Mixed Prawn larvae", "Prawn",
+                ifelse(TaxaVed ==" Aosellota", "Isopods",
+                ifelse(TaxaVed =="Red Gelatinous", "Siphonophore",
+                ifelse(TaxaVed =="Pelagic worm", "Other",  
+                ifelse(TaxaVed =="Remainder", "Tunicates",  
+                ifelse(TaxaVed =="Spherical eggs", "Other",  
+                ifelse(TaxaVed =="Hyperia medusarium", "Amphipods",     
+                ifelse(TaxaVed =="Aphicaryon acaule", "Siphonophore",      
+                ifelse(TaxaVed =="Salpa thompsoni", "Tunicates",   
+                ifelse(TaxaVed =="Hydromedusa", "Medusa",    
+                ifelse(TaxaVed =="Spongiobranchaea australis", "Gymnosome",
+                ifelse(TaxaVed =="Eusirella spp", "Copepod",   
+                ifelse(TaxaVed =="Asellota", "Isopods",  
+                ifelse(TaxaVed =="Phyllosoma", "Crustacean",  
+                ifelse(TaxaVed =="Senticaudata", "worms",
+                ifelse(TaxaVed =="remainder", "Tunicates",      
+                ifelse(TaxaVed =="eggs", "Other",  
+                ifelse(TaxaVed =="Phronima houses", "Other",
+                ifelse(TaxaVed =="Salpa thompsoni - aggregate", "Tunicates", 
+                ifelse(TaxaVed =="Salpa thompsoni - solitary juv", "Tunicates", 
+                ifelse(TaxaVed =="Salpa thompsoni - solitary", "Tunicates", 
+                       ACat))))))))))))))))))))))))))))) %>% 
   #separate(Comments, c("sub", "comment"),sep= " ") %>% 
   #filter(sub != "subsample") %>% 
   arrange(-CAAB)
 
 #tests
-ACat <- ccomp_2 %>% 
-  distinct(ACat,Taxa_updated,CAAB_updated)
-```
-
-# Add bladder data information from Micronekton Database
-```{r adding bladder data}
-
-# Bladderdata <- MicroDB %>% 
-#   select(SPCODE, Species_Name,ACat) %>% 
-#   distinct(Species_Name,.keep_all = TRUE)
-# write_csv(Bladderdata,"results/MicroDB_Acat.csv")
-
-# select appropriate data from MicroDB
-ccomp_2_bladder <- left_join(ccomp_2, Bladderdata, by = c("Taxa_updated"= "Species_Name"))
-
-#Sol_Micro <-left_join(Shot_2,deployments_1, by= c("Deployment" = "Operation")) %>%  
-
+filter(ccomp_2,ACat == "Fish")
 ```
 
 #create higher grouping "Taxa Groups"
@@ -189,70 +163,58 @@ ccomp_3 <- ccomp_2 %>%
 unique(paste0(ccomp_3$ACat," ",ccomp_3$Taxa_Groups))
 check <- select(ccomp_3,ACat,CAAB,Taxa)
 ```
-<!-- updating data from ANFC - this was done in Ccomp_1 Taxa_Ved, CAAB_Ved -->
-<!-- ```{r adding fish taxa data} -->
-<!-- # if Taxa_ed is NA then replace with Taxa otherwise use Taxa_ed -->
-<!-- # ccomp_4 <- ccomp_3 %>%  -->
-<!-- #   mutate(Taxa_updated = ifelse(is.na(Taxa_ed), Taxa,Taxa_ed)) %>%  -->
-<!-- #   mutate(CAAB_updated = ifelse(is.na(CAAB_ed), CAAB,CAAB_ed)) -->
-<!-- ``` -->
+updating data from ANFC
+```{r adding fish taxa data}
+# if Taxa_ed is NA then replace with Taxa otherwise use Taxa_ed
+ccomp_4 <- ccomp_3 %>% 
+  mutate(Taxa_updated = ifelse(is.na(Taxa_ed), Taxa,Taxa_ed)) %>% 
+  mutate(CAAB_updated = ifelse(is.na(CAAB_ed), CAAB,CAAB_ed))
+```
 
-#filter data to exclude Subsamples, data where the Acc has been split, and Gut samples
-```{r filter Samples}
+filter data to exclude Subsamples, data where the Acc has been split, and Gut samples
+```{r filter for Samples only}
 #list sample types
-unique(ccomp_3$Sample_Type)
+unique(ccomp_4$Sample_Type)
 # choose only "S" which is a full sample (not subsampele, renamedsplit or gut sample)
-ccomp_4 <- ccomp_3 %>%
+ccomp_5 <- ccomp_4 %>%
   filter(Sample_Type == "S") %>% 
   select(Voyage,Deployment,Acc,Acc_ed,ACat,Taxa_Groups,CAAB,Taxa,CAAB_updated,Taxa_updated,Count,weight_g,Storage_temp,Preservative)
 ```
 
 
 ```{r data outputs}
-species_list <- ccomp_4 %>% 
+species_list <- ccomp_5 %>% 
   distinct(Taxa_updated,.keep_all = TRUE) %>% 
   select(ACat,Taxa_updated,CAAB_updated) %>% 
  # filter(is.na(ACat)) %>% 
   arrange(CAAB_updated)
 
-write.csv(species_list,"Results/SpeciesList.csv")
-
-
-# Sample subsets by fixative and taxa group
-
 fixed <-ccomp_3 %>% 
   filter(Preservative !="discarded onboard" & Storage_temp != "-20 degC")
   
-Prawns <- ccomp_3 %>% 
+
+Prawns <- ccomp_5 %>% 
   filter(Storage_temp == "-20 degC" & ACat == "Prawn") %>% 
   summarise(weight = sum(weight_g))
 
-Fish <- ccomp_3 %>% 
+Fish <- ccomp_5 %>% 
   filter(Storage_temp != "-20 degC" & ACat == "Fish") %>% 
   summarise(weight = sum(weight_g,na.rm = TRUE))
 
-Inverts <- ccomp_3 %>% 
+Inverts <- ccomp_5 %>% 
   filter(Storage_temp != "-20 degC" & ACat != "Fish" & ACat != "Prawns") %>% 
   summarise(weight = sum(weight_g,na.rm = TRUE))
 
-Prawns <- ccomp_3 %>% 
+  
+write.csv(species_list,"Results/SpeciesList.csv")
+
+
+Prawns <- ccomp_5 %>% 
   filter(ACat =="Prawn" & Storage_temp == "-20 degC" ) %>% 
   select(Deployment,Acc,Taxa)
+ 
+
 ```
-
-# Summary for Catch Comp 
-```{r catch comp summary}
-ccomp_5_summary <- ccomp_4 %>% 
-  group_by(Deployment,ACat,Taxa_Groups,Taxa_updated,CAAB_updated) %>% 
-  summarise(nos= sum(Count, na.rm = TRUE),weight_g = sum(weight_g, na.rm = TRUE))
-
-#ccomp_AEC <- ccomp_1 %>% 
-#  filter(sub !="subsample" | sub !="sub") %>% 
-#  dplyr::group_by(Taxa_Groups) %>% 
- # dplyr::summarise(nos= sum(Count, na.rm = TRUE),weight_kg = round(sum(weight_g, na.rm = TRUE)/1000,digits = 2))
-```
-
-
 # Shot Data
 
 # Volume Filtered Calculation
@@ -349,9 +311,23 @@ Shottest <- Shot_1 %>%
 
 #mutate(Taxa = ifelse(Taxa =="kriffichthys andersoni","Krefftichthys anderssoni",Taxa)) 
 ```
+Length Data
+```{R Lengths}
+length_1 <- length %>% 
+  rename(Acc = 'Acc #') %>% 
+  left_join(ccomp_5, by = c("Deployment", "Acc")) %>% 
+  left_join(Shot_3, by = "Deployment") %>% 
+  select(Voyage= Voyage.x, Site, daylight, Depth_Stratum, Deployment, Acc, Acc_ed, Species,Taxa, `Length _mm`) %>% 
+   filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") %>% 
+  filter(`Length _mm`< 5500)
 
+write.csv(length_1,"Results/IN2020_V08_Lengths.csv")
 
-# Joining Shot and Catch data for total weight estimates
+ggplot(length_1, aes(y = Depth_Stratum, x = `Length _mm`)) +
+  geom_point()
+```
+
+# Joining Shot and Catch data
 ```{r}
 deployments_1 <- deployments %>% 
   select(Operation, Tweight_g =`Total Weight (g)`, Sweight_g =`Total Sorted Weight (g)`)
@@ -378,11 +354,22 @@ Sol_Micro_summary$Depth_Stratum <- factor(as.factor(Sol_Micro_summary$Depth_Stra
 ```
 
 
+Catch Comp summary
+```{r catch summary}
+ccomp_6 <- ccomp_5 %>% 
+  dplyr::group_by(Deployment,ACat,Taxa_Groups,Taxa_updated,CAAB_updated) %>% 
+  dplyr::summarise(nos= sum(Count, na.rm = TRUE),weight_g = sum(weight_g, na.rm = TRUE))
+
+#ccomp_AEC <- ccomp_1 %>% 
+#  filter(sub !="subsample" | sub !="sub") %>% 
+#  dplyr::group_by(Taxa_Groups) %>% 
+ # dplyr::summarise(nos= sum(Count, na.rm = TRUE),weight_kg = round(sum(weight_g, na.rm = TRUE)/1000,digits = 2))
+```
 
 Catch comp linked with shot data - ACat
 ```{r catch comp with shot data - Acoustic Categories}
 
-ccomp_6_SumShot <- ccomp_5_summary %>% 
+ccomp_7 <- ccomp_6 %>% 
   left_join(Shot_2, by="Deployment") %>% 
   mutate(Weight_Std_gm3 = weight_g / VolumeFiltered_m3_speed) %>% 
   mutate(Abd_Std_nosm3 = nos / VolumeFiltered_m3_speed) %>% 
@@ -391,27 +378,26 @@ ccomp_6_SumShot <- ccomp_5_summary %>%
          datetime_UTC_start = date_start,datetime_UTC_stop = date_stop,
          lat_decdeg_start, long_decdeg_start, lat_decdeg_stop, long_decdeg_stop, VolumeFiltered_m3_speed) 
 
-write.csv(ccomp_6_SumShot,"Results/IN2020_V08_CatchComp.csv")
+write.csv(ccomp_7,"Results/IN2020_V08_CatchComp.csv")
 
-# this is not quite what i'm after !!!
-Species_by_Site <- ccomp_6_SumShot %>% 
-  #select(Deployment)
-  group_by(Site,daylight,Depth_Stratum) %>% 
+Species_by_Site <- ccomp_7 %>% 
+  group_by(Site) %>% 
   distinct(Taxa_updated, .keep_all = TRUE)
   
 
-test <- ccomp_5_summary %>% 
+test <- ccomp_3 %>% 
   filter(Taxa_Groups == "Fish")
 #mutate(ACat = ifelse(CAAB == 99110232, "Tunicates",
-
-unique(ccomp_5_summary$ACat)
-unique(ccomp_5_summary$Taxa_Groups)
-unique(paste0(ccomp_5_summary$ACat," ",ccomp_5_summary$Taxa_Groups))
 ``` 
+
+
+
+
+
 
 Total Standardised catch
 ```{r total std weight}
-TW_std <- ccomp_6_SumShot %>% 
+TW_std <- ccomp_7 %>% 
   group_by(Site, daylight,Depth_Stratum,Deployment) %>% 
   filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") %>% 
   #mutate(Weight_Std_gm3 = ifelse(daylight %in% "Night", Weight_Std_gm3*-1, weight_g)) %>% 
@@ -484,23 +470,22 @@ Joining Shot data to Catch Comp
 #group for site, day, depth - sum values
 
 # sum via the Taxa_Groups for each deployment
-ccomp_TaxaGroups <-ccomp_6_SumShot %>% 
+ccomp_TaxaGroups <-ccomp_7 %>% 
   group_by(Site,daylight,Depth_Stratum,Deployment, Taxa_Groups) %>% 
   summarise(Nos = sum(nos), Weight_g = sum(weight_g),
             Weight_gm3 = sum(Weight_Std_gm3),Abd_nosm3 =sum(Abd_Std_nosm3))
 
 # sum via ACat for each deployment
-ccomp_Acat <-ccomp_6_SumShot %>% 
+ccomp_Acat <-ccomp_7 %>% 
   group_by(Site,daylight,Depth_Stratum,Deployment, ACat) %>% 
   summarise(Nos = sum(nos), Weight_g = sum(weight_g),
             Weight_gm3 = sum(Weight_Std_gm3),Abd_nosm3 =sum(Abd_Std_nosm3))
 
-# # joining Shot data to catch comp
-####unsure of this code at the momoment#############
-# ccomp_7_shot<- ccomp_1 %>% 
-#   left_join(Shot_2, by ="Deployment")
-# 
-# write.csv(ccomp_7_shot,"Results/CatchcompshotRaw1.csv")
+# joining Shot data to catch comp
+ccomp_7_shot<- ccomp_1 %>% 
+  left_join(Shot_2, by ="Deployment")
+
+write.csv(ccomp_7_shot,"Results/CatchcompshotRaw1.csv")
 ```
 
 PROPORTION Taxa_Groups
@@ -539,7 +524,7 @@ TaxaEpi <- ggplot(Taxa_TW %>%
   scale_fill_manual(values=c("purple","grey","orange","dark blue","dark green","light pink","light blue"))+
   ylab("Epipelagic")+
   xlab("")
-TaxaEpi
+TaxaEpi()
 
 
 
@@ -1204,23 +1189,6 @@ Day_Depth <- Sol_Micro %>%
   #filter(Depth_Stratum == "Epi" | Depth_Stratum =="Lmeso" | Depth_Stratum == "Meso") 
   group_by(daylight,Depth_Stratum) %>% 
   summarise(n(), WSorted_g = mean(Sweight,na.rm = TRUE),sd= sd(Sweight, na.rm = TRUE))
-```
-
-
-### Length Data
-```{R Lengths}
-length_1 <- length %>% 
-  rename(Acc = 'Acc #') %>% 
-  left_join(ccomp_4, by = c("Deployment", "Acc")) %>% 
-  left_join(Shot_3, by = "Deployment") %>% 
-  select(Voyage= Voyage.x, Site, daylight, Depth_Stratum, Deployment, Acc, Acc_ed, Species,Taxa, `Length _mm`) %>% 
-   filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") %>% 
-  filter(`Length _mm`< 5500)
-
-write.csv(length_1,"Results/IN2020_V08_Lengths.csv")
-
-ggplot(length_1, aes(y = Depth_Stratum, x = `Length _mm`)) +
-  geom_point()
 ```
 
                                    
