@@ -214,7 +214,10 @@ check <- select(ccomp_3_ACATDB_TGroups,ACat,CAAB,Taxa_updated)
 # choose only "S" which is a full sample (not subsampele, renamedsplit or gut sample)
 ccomp_4 <- ccomp_3_ACATDB_TGroups %>%
   filter(Sample_Type == "S") %>% 
-  select(Voyage,Deployment,Acc,Acc_ed,ACat,Taxa_updated_Groups,CAAB,Taxa_updated,CAAB_updated,Taxa_updated,Count,weight_g,Storage_temp,Preservative)
+  select(Voyage,Deployment,Acc,Acc_ed,ACat,Taxa_Groups,CAAB,Taxa_updated,CAAB_updated,Taxa_updated,Count,weight_g,Storage_temp,Preservative) 
+
+
+
 ```
 
 
@@ -246,20 +249,6 @@ Prawns <- ccomp_3_ACATDB_TGroups %>%
   filter(ACat =="Prawn" & Storage_temp == "-20 degC" ) %>% 
   select(Deployment,Acc,Taxa_updated)
 ```
-
-# Summary for Catch Comp 
-```{r catch comp summary}
-ccomp_summary <- ccomp_4 %>% 
-  group_by(Deployment,ACat,Taxa_updated_Groups,Taxa_updated,CAAB_updated) %>% 
-  summarise(nos= sum(Count, na.rm = TRUE),weight_g = sum(weight_g, na.rm = TRUE))
-#ccomp_AEC <- ccomp_1 %>% 
-#  filter(sub !="subsample" | sub !="sub") %>% 
-#  dplyr::group_by(Taxa_updated_Groups) %>% 
- # dplyr::summarise(nos= sum(Count, na.rm = TRUE),weight_kg = round(sum(weight_g, na.rm = TRUE)/1000,digits = 2))
-
-filter(ccomp_4,Deployment == 39, Acc== 19)
-```
-
 
 
 # Shot Data
@@ -354,41 +343,50 @@ Shottest <- Shot_1 %>%
 
 # Length Data
 ```{r Lengths}
+
+# selecting data from ccomp_4 and length  to make the join more manageable
+ccomp_4_forlengthjoin <- select(ccomp_4, Deployment, Acc, Acc_ed,Taxa_updated, CAAB_updated)
+
 length_1 <- length %>% 
+  rowid_to_column("ID") %>% 
   rename(Acc = 'Acc #') %>% 
-  left_join(ccomp_4, by = c("Deployment", "Acc")) %>% 
-  left_join(Shot_3, by = "Deployment")
+  select(-Voyage,-Net_Name)
+
+# joining length data to the catch comp and site data for graphing
+length_2<- length_1 %>% 
+  left_join(ccomp_4_forlengthjoin, by = c("Deployment", "Acc")) %>% 
+  distinct(ID, .keep_all = TRUE) %>% 
+  left_join(Shot_3, by = "Deployment") %>% 
+  distinct(ID, .keep_all = TRUE) %>% 
+  arrange()
+
+# calculate average lengths
+length_2_avg <- length_2 %>% 
+  rename(length_mm = `Length _mm`) %>% 
+  group_by(Deployment,Acc_ed) %>% 
+  summarise(n(),AvgL_mm = mean(length_mm))
+  
+Dups <-length_2[duplicated(length_2$ID), ]
 
 #plot length data
-  Length_1_sites <-  select(length_1, Voyage = Voyage.x, Site, daylight, Depth_Stratum, Deployment, Acc, Acc_ed, Species,Taxa_updated, `Length _mm`) %>% 
+  length_2_sites <-  select(length_2, Site, daylight, Depth_Stratum, Deployment, Acc, Acc_ed, Species,Taxa_updated, `Length _mm`) %>% 
    filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") %>%     
   filter(`Length _mm`< 5500)
   
-write.csv(Length_1_sites,"Results/IN2020_V08_Lengths.csv")
+write.csv(length_2_sites,"Results/IN2020_V08_Lengths.csv")
 
-ggplot(Length_1_sites, aes(y = Depth_Stratum, x = `Length _mm`)) +
-  geom_point()
+# ggplot(length_2_sites, aes(y = Depth_Stratum, x = `Length _mm`)) +
+#   geom_point()
 ```
 
-avg lengths
-```{r avg lengths}
-length_2_avg <- Length_1_sites %>% 
-  rename(length_mm = `Length _mm`) %>%
-  group_by(Site,daylight,Deployment, Species,Acc, Acc_ed) %>% 
-  summarise(n(), AvgL_mm = mean(length_mm))
-
-length_2_avg_small <- length_2_avg %>% 
-  filter(AvgL_mm <10)
-``` 
-
-## add in the length data
+## add in the average length data to the catch comp
 ```{r adding in length data}
   
-ccomp_4_length <- left_join(ccomp_4, length_2_avg, by = c("Deployment", "Acc_ed")) 
+ccomp_5 <- left_join(ccomp_4, length_2_avg, by = c("Deployment", "Acc_ed")) 
 
 #dupes <- get_dupes(ccomp_2_ACATDB_length
  
-filter(ccomp_4_length,Deployment == 39, Acc_ed== 19)
+# filter(ccomp_5,Deployment == 39, Acc_ed== 19)
 ```
 
 
@@ -414,19 +412,42 @@ Sol_Micro_summary <- Sol_Micro %>%
 Sol_Micro_summary$Depth_Stratum <- factor(as.factor(Sol_Micro_summary$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
 ```
 
+```{r catch comp summary}
+#summarise data by species for each Deployment
+ccomp_5_summary<- ccomp_5 %>% 
+  group_by(Deployment,ACat,Taxa_Groups,Taxa_updated,CAAB_updated) %>% 
+  summarise(nos= sum(Count, na.rm = TRUE),weight_g = sum(weight_g, na.rm = TRUE)) %>% 
+  rowid_to_column("ID")
+#ccomp_AEC <- ccomp_1 %>% 
+#  filter(sub !="subsample" | sub !="sub") %>% 
+#  dplyr::group_by(Taxa_updated) %>% 
+ # dplyr::summarise(nos= sum(Count, na.rm = TRUE),weight_kg = round(sum(weight_g, na.rm = TRUE)/1000,digits = 2))
+
+# filter(ccomp_4,Deployment == 39, Acc== 19)
+```
 
 
-Catch comp linked with shot data - ACat
+
+# Catch comp linked with shot data - ACat
+
+## Standardising the catch comp using Volumen Filtered
 ```{r catch comp with shot data - Acoustic Categories}
 ccomp_6_SumShot <- ccomp_5_summary %>% 
   left_join(Shot_2, by="Deployment") %>% 
   mutate(Weight_Std_gm3 = weight_g / VolumeFiltered_m3_speed) %>% 
   mutate(Abd_Std_nosm3 = nos / VolumeFiltered_m3_speed) %>% 
-  select(Site,daylight,Depth_Stratum,Deployment,ACat,Taxa_updated_Groups,Taxa_updated,CAAB_updated,
+  select(ID,Site,daylight,Depth_Stratum,Deployment,ACat,Taxa_Groups,Taxa_updated,CAAB_updated,
          nos,weight_g,Weight_Std_gm3,Abd_Std_nosm3,
          datetime_UTC_start = date_start,datetime_UTC_stop = date_stop,
-         lat_decdeg_start, long_decdeg_start, lat_decdeg_stop, long_decdeg_stop, VolumeFiltered_m3_speed) 
+         lat_decdeg_start, long_decdeg_start, lat_decdeg_stop, long_decdeg_stop, VolumeFiltered_m3_speed) %>% 
+  #making sure dupicate row are ignored
+  distinct(ID,.keep_all = TRUE)
+
+# Dups <-ccomp_6_SumShot[duplicated(ccomp_6_SumShot$ID), ]
+
 write.csv(ccomp_6_SumShot,"Results/IN2020_V08_CatchComp.csv")
+
+
 # this is not quite what i'm after !!!
 Species_by_Site <- ccomp_6_SumShot %>% 
   #select(Deployment)
@@ -434,14 +455,34 @@ Species_by_Site <- ccomp_6_SumShot %>%
   distinct(Taxa_updated, .keep_all = TRUE)
   
 test <- ccomp_5_summary %>% 
-  filter(Taxa_updated_Groups == "Fish")
+  filter(Taxa_updated == "Fish")
 #mutate(ACat = ifelse(CAAB == 99110232, "Tunicates",
 unique(ccomp_5_summary$ACat)
-unique(ccomp_5_summary$Taxa_updated_Groups)
-unique(paste0(ccomp_5_summary$ACat," ",ccomp_5_summary$Taxa_updated_Groups))
+unique(ccomp_5_summary$Taxa_updated)
+unique(paste0(ccomp_5_summary$ACat," ",ccomp_5_summary$Taxa_updated))
+
+#adding 0 in for graphs
+  ccomp_6_SumShot_zeros <- ccomp_6_SumShot %>% 
+  arrange() %>% 
+  complete(ID,CAAB_updated, Taxa_updated, fill = list(Nos =0,Weight_g=0, Weight_Std_gm3 = 0, Abd_Std_nosm3= 0))%>%
+  arrange(ID) %>% 
+  fill(Site, .direction = "down")%>%
+  fill(daylight, .direction = "down") %>% 
+  fill(Depth_Stratum, .direction = "down")%>%
+  fill(Deployment, .direction = "down")%>%
+  fill(ACat,.direction = "down") %>% 
+  fill(Taxa_Groups,.direction = "down") %>% 
+  fill(Deployment, .direction = "down")%>%
+  fill(datetime_UTC_start, .direction = "down")%>%
+    fill(datetime_UTC_stop, .direction = "down")%>%
+    fill(lat_decdeg_start, .direction = "down")%>%
+    fill(lat_decdeg_stop, .direction = "down")%>%
+    fill(long_decdeg_start, .direction = "down")%>%
+    fill(long_decdeg_stop, .direction = "down")
 ``` 
 
-Total Standardised catch
+#Total Summarised Standardised catch
+
 ```{r total std weight}
 TW_std <- ccomp_6_SumShot %>% 
   group_by(Site, daylight,Depth_Stratum,Deployment) %>% 
@@ -473,7 +514,8 @@ ggsave(tw,filename = "Results/tw.jpg")
 ```
 
 ```{r total weight summary}
-# Summary Using SummarySE
+# Summary Using SummarySE 
+## still based on "ccomp_6_SumShot"
 TW_summary <- summarySE(TW_std, measurevar = "TWgm3", groupvars = c("Site", "daylight", "Depth_Stratum"))
 TWSum_plot <- ggplot(TW_summary,
                      mapping = aes(x = as.factor(Depth_Stratum),
@@ -496,14 +538,14 @@ ggsave("figures/TWeight_gm3.jpg")
 ```
 
 
-Summary by ACat and Taxa_updated_Groups
+Summary by ACat and Taxa_updated
 Joining Shot data to Catch Comp
 
 ```{r acoustic groups summary}
 #group for site, day, depth - sum values
-# sum via the Taxa_updated_Groups for each deployment
-ccomp_Taxa_updatedGroups <-ccomp_6_SumShot %>% 
-  group_by(Site,daylight,Depth_Stratum,Deployment, Taxa_updated_Groups) %>% 
+# sum via the Taxa_updated for each deployment
+ccomp_Taxa_Groups <-ccomp_6_SumShot %>% 
+  group_by(Site,daylight,Depth_Stratum,Deployment, Taxa_Groups) %>% 
   summarise(Nos = sum(nos), Weight_g = sum(weight_g),
             Weight_gm3 = sum(Weight_Std_gm3),Abd_nosm3 =sum(Abd_Std_nosm3))
 # sum via ACat for each deployment
@@ -519,12 +561,12 @@ ccomp_Acat <-ccomp_6_SumShot %>%
 # write.csv(ccomp_7_shot,"Results/CatchcompshotRaw1.csv")
 ```
 
-PROPORTION Taxa_updated_Groups
+PROPORTION Taxa
 fix these graphs so that all groups appear in legend even if there are no
-```{r Taxa_updated_Group proportions}
-#Taxa_updated_Groups by Site / Daylight / Depth
-TW_std_Taxa_updated <- ccomp_Taxa_updatedGroups %>% 
-  group_by(Site, daylight,Depth_Stratum,Taxa_updated_Groups) %>% 
+```{r Taxa_Group proportions}
+#Taxa by Site / Daylight / Depth
+TW_std_Taxa_Groups <- ccomp_Taxa_Groups %>% 
+  group_by(Site, daylight,Depth_Stratum,Taxa_Groups) %>% 
   filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") %>% 
   summarise(TWgm3 = sum(Weight_gm3)) %>% 
   #mutate(TWgm3 = ifelse(daylight %in% "Night", TWgm3*-1, TWgm3)) %>% 
@@ -532,57 +574,57 @@ TW_std_Taxa_updated <- ccomp_Taxa_updatedGroups %>%
 
 
 ## making depth factor
-TW_std_Taxa_updated$Depth_Stratum <- factor(as.factor(TW_std_Taxa_updated$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
+TW_std_Taxa_Groups$Depth_Stratum <- factor(as.factor(TW_std_Taxa_Groups$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
 ## making site a factor
-TW_std_Taxa_updated$Site <- factor(as.factor(TW_std_Taxa_updated$Site), levels = c("SOTS","55S","58S"))
+TW_std_Taxa_Groups$Site <- factor(as.factor(TW_std_Taxa_Groups$Site), levels = c("SOTS","55S","58S"))
 
 
-# Taxa_updated Group Plot
-#need to group the frame by Taxa_updated Groups - remove other
-Taxa_updated_TW <- TW_std_Taxa_updated%>%
-  filter(Taxa_updated_Groups != "other") %>% 
+# Taxa Group Plot
+#need to group the frame by Taxa Groups - remove other
+Taxa_TW <- TW_std_Taxa_Groups %>%
+  filter(Taxa_Groups != "Other") %>% 
   #mutate(stage = as.character(stage))%>% 
   #mutate(Date= as.Date(Date,"%d/%m")) %>% 
   #group_by(Depth_Stratum) %>% 
   arrange()
 
 ## making depth a factor
-Taxa_updated_TW$Depth_Stratum <- factor(as.factor(Taxa_updated_TW$Depth_Stratum),levels = c("Epi", "Meso", "Lmeso"))
+Taxa_TW$Depth_Stratum <- factor(as.factor(Taxa_TW$Depth_Stratum),levels = c("Epi", "Meso", "Lmeso"))
 ## making site a factor
-Taxa_updated_TW$Site <- factor(as.factor(Taxa_updated_TW$Site), levels = c("SOTS","55S","58S"))
+Taxa_TW$Site <- factor(as.factor(Taxa_TW$Site), levels = c("SOTS","55S","58S"))
 
-ggplot(Taxa_updated_TW, aes(fill=Taxa_updated_Groups, y =TWgm3, x = daylight))+
+ggplot(Taxa_TW, aes(fill=Taxa_Groups, y =TWgm3, x = daylight))+
   geom_bar(position = "fill",stat = "identity")
   
 
-Taxa_updatedEpi <- ggplot(Taxa_updated_TW %>% 
+Taxa_Epi <- ggplot(Taxa_TW %>% 
                     filter(Depth_Stratum == "Epi"),
-       aes(y = TWgm3,x = daylight, fill = Taxa_updated_Groups))+
+       aes(y = TWgm3,x = daylight, fill = Taxa_Groups))+
   geom_bar(position = "fill", stat = "identity")+
   theme(legend.position = "bottom")+
   facet_grid(.~Site)+
   scale_fill_manual(values=c("purple","grey","orange","dark blue","dark green","light green","light blue", "light pink"))+
   ylab("Epipelagic")+
   xlab("")
-Taxa_updatedEpi
+Taxa_Epi
 
-Taxa_updatedMeso <- ggplot(Taxa_updated_TW %>% 
+Taxa_Meso <- ggplot(Taxa_TW %>% 
                     filter(Depth_Stratum == "Meso"),
-       aes(y = TWgm3,x = daylight, fill = Taxa_updated_Groups))+
+       aes(y = TWgm3,x = daylight, fill = Taxa_Groups))+
   geom_bar(position = "fill", stat = "identity")+
   facet_grid(.~Site)+
   scale_fill_manual(values=c("purple","grey","orange","dark blue","dark green","light green","light blue", "light pink"))+
   theme(legend.position = "bottom")+
   ylab("Mesopelagic")+
   xlab("")
-Taxa_updatedMeso
+Taxa_Meso
 
-Taxa_updatedLMeso <- ggplot(Taxa_updated_TW %>% 
+Taxa_LMeso <- ggplot(Taxa_TW %>% 
                     filter(Depth_Stratum == "Lmeso"),
-       aes(y = TWgm3,x = daylight, fill = Taxa_updated_Groups))+
+       aes(y = TWgm3,x = daylight, fill = Taxa_Groups))+
   geom_bar(position = "fill", stat = "identity")+
   facet_grid(.~Site)+
-  scale_fill_manual(values=c("purple","grey","orange","dark blue","dark green","light green","light blue", "light pink"))+
+  scale_fill_manual(values=c("purple","grey","orange","dark blue","dark green","light green","light blue", "light pink", "yellow"))+
   theme(legend.title = element_blank(),
         legend.box = "horizontal",
         legend.position = "bottom",
@@ -590,42 +632,43 @@ Taxa_updatedLMeso <- ggplot(Taxa_updated_TW %>%
         legend.key.size = unit(0.3,"lines"))+
   ylab("Lower mesopelagic")+
   xlab("Daylight")
-Taxa_updatedLMeso
-grid.arrange(Taxa_updatedEpi,Taxa_updatedMeso,Taxa_updatedLMeso, ncol= 1, nrow = 3, widths = c(4), heights = c(20,20,25))
+Taxa_LMeso
+grid.arrange(Taxa_Epi,Taxa_Meso,Taxa_LMeso, ncol= 1, nrow = 3, widths = c(4), heights = c(20,20,25))
 ```
 
-```{r Taxa_updated by site}
-Taxa_updatedSots <- ggplot(Taxa_updated_TW %>% 
+```{r Taxa by site}
+TaxaSots <- ggplot(Taxa_TW %>% 
                     filter(Site == "SOTS"),
-       aes(y = TWgm3,x = Depth_Stratum, fill = Taxa_updated_Groups))+
+       aes(y = TWgm3,x = Depth_Stratum, fill = Taxa_Groups))+
   geom_bar(position = "fill", stat = "identity")+
   theme(legend.position = "none")+
   facet_grid(.~daylight)+
-  scale_fill_manual(values=c("purple","grey","orange","dark blue","dark green","light green","light blue", "light pink"))+
+  scale_fill_manual(values=c("purple","grey","orange","dark blue","dark green","light green","light blue", "light pink","yellow"))+
   theme(text = element_text(size = 9))+
   ylab("SOTS")+
   xlab("")
-plot(Taxa_updatedSots)
-ggsave("figures/Taxa_updatedSots.jpg")
-Taxa_updated55 <- ggplot(Taxa_updated_TW %>% 
+plot(TaxaSots)
+ggsave("figures/TaxaSots.jpg")
+
+Taxa55 <- ggplot(Taxa_TW %>% 
                     filter(Site == "55S"),
-       aes(y = TWgm3,x = Depth_Stratum, fill = Taxa_updated_Groups))+
+       aes(y = TWgm3,x = Depth_Stratum, fill = Taxa_Groups))+
   geom_bar(position = "fill", stat = "identity")+
   theme(legend.position = "none")+
   facet_grid(.~daylight)+
-  scale_fill_manual(values=c("purple","grey","orange","dark blue","dark green","light green","light blue", "light pink"))+
+  scale_fill_manual(values=c("purple","grey","orange","dark blue","dark green","light green","light blue", "light pink","yellow"))+
    theme(text = element_text(size = 9))+
   ylab("55S")+
   xlab("")
-plot(Taxa_updated55)
-ggsave("figures/Taxa_updated55.jpg")
-Taxa_updated58 <- ggplot(Taxa_updated_TW %>% 
+plot(Taxa55)
+ggsave("figures/Taxa55.jpg")
+Taxa58 <- ggplot(Taxa_TW %>% 
                     filter(Site == "55S"),
-       aes(y = TWgm3,x = Depth_Stratum, fill = Taxa_updated_Groups))+
+       aes(y = TWgm3,x = Depth_Stratum, fill = Taxa_Groups))+
   geom_bar(position = "fill", stat = "identity")+
   theme(legend.position = "none")+
   facet_grid(.~daylight)+
-  scale_fill_manual(values=c("purple","grey","orange","dark blue","dark green","light green","light blue", "light pink"))+
+  scale_fill_manual(values=c("purple","grey","orange","dark blue","dark green","light green","light blue", "light pink", "yellow"))+
   #theme_bw()+
   theme(text = element_text(size = 9))+
   theme(legend.title = element_blank(),
@@ -635,19 +678,21 @@ Taxa_updated58 <- ggplot(Taxa_updated_TW %>%
         legend.box = "horizontal")+
   ylab("58S")+
   xlab("")
-plot(Taxa_updated58)
-ggsave("figures/Taxa_updated58.jpg")
-grid.arrange(Taxa_updatedSots,Taxa_updated55,Taxa_updated58, ncol= 1, nrow = 3, widths = c(4), heights = c(20,20,30))
-PropTaxa_updatedAll <- arrangeGrob(Taxa_updatedSots,Taxa_updated55,Taxa_updated58, ncol= 1, nrow = 3, widths = c(4), heights = c(20,20,30)) # creates plot as an object
-ggsave("figures/PropTaxa_updatedAll.jpg",PropTaxa_updatedAll) # saves the plot to file :)
+plot(Taxa58)
+ggsave("figures/Taxa58.jpg")
+grid.arrange(TaxaSots,Taxa55,Taxa58, ncol= 1, nrow = 3, widths = c(4), heights = c(20,20,30))
+PropTaxaAll <- arrangeGrob(TaxaSots,Taxa55,Taxa58, ncol= 1, nrow = 3, widths = c(4), heights = c(20,20,30)) # creates plot as an object
+ggsave("figures/PropTaxaAll.jpg",PropTaxaAll) # saves the plot to file :)
 ```
-Depth Distriubtion by individual Taxa_updated
+
+
+#Depth Distriubtion by individual Taxa
 
 ```{r select individual Gelatinous Active}
 #Gelatinous_Active
-TW_std_ID_Taxa_updated <- ccomp_Taxa_updatedGroups %>% 
+TW_std_ID_Taxa <- ccomp_Taxa_Groups %>% 
   group_by(Site, daylight,Depth_Stratum,Deployment) %>% 
-  filter(Taxa_updated_Groups=="Gelatinous_Active") %>% 
+  filter(Taxa_Groups=="Gelatinous_Active") %>% 
  # filter(Taxa_updated =="Lampanyctus australis") %>% 
   filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") %>% 
   #mutate(Weight_Std_gm3 = ifelse(daylight %in% "Night", Weight_Std_gm3*-1, weight_g)) %>% 
@@ -655,9 +700,9 @@ TW_std_ID_Taxa_updated <- ccomp_Taxa_updatedGroups %>%
   mutate(TWgm3 = ifelse(daylight %in% "Night", TWgm3*-1, TWgm3)) %>% 
   group_by(Site, daylight,Depth_Stratum) %>% 
   summarise(TWgm3_avg = mean(TWgm3),n(),sd=sd(TWgm3,na.rm = TRUE))
-TW_std_ID_Taxa_updated$Site <- factor(as.factor(TW_std_ID_Taxa_updated$Site), levels = c("SOTS","55S","58S"))
-TW_std_ID_Taxa_updated$Depth_Stratum <- factor(as.factor(TW_std_ID_Taxa_updated$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
-Taxa_updatedInd_plot <- ggplot(TW_std_ID_Taxa_updated,
+TW_std_ID_Taxa$Site <- factor(as.factor(TW_std_ID_Taxa$Site), levels = c("SOTS","55S","58S"))
+TW_std_ID_Taxa$Depth_Stratum <- factor(as.factor(TW_std_ID_Taxa$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
+Taxa_Ind_plot <- ggplot(TW_std_ID_Taxa,
                      mapping = aes(x = as.factor(Depth_Stratum),
                                    y = TWgm3_avg, fill = daylight))+
     geom_errorbar(aes(ymin = TWgm3_avg - sd, ymax= TWgm3_avg + sd, colour = factor(daylight)),
@@ -673,25 +718,28 @@ Taxa_updatedInd_plot <- ggplot(TW_std_ID_Taxa_updated,
   coord_flip()+
   facet_grid(~Site)+
   theme_bw()
-plot(Taxa_updatedInd_plot)
+plot(Taxa_Ind_plot)
 ggsave("figures/Gelatinous_Active.jpg")
-```
 
-```{r select  Tunicates}
+
 #Tunicates
-TW_std_ID_Taxa_updated <- ccomp_Taxa_updatedGroups %>% 
+
+TW_std_ID_Taxa <- ccomp_Taxa_Groups %>% 
   group_by(Site, daylight,Depth_Stratum,Deployment) %>% 
-  filter(Taxa_updated_Groups=="Tunicates") %>% 
- # filter(Taxa_updated =="Lampanyctus australis") %>% 
+  filter(Taxa_Groups=="Tunicates") %>% 
+ # filter(Taxa =="Lampanyctus australis") %>% 
   filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") %>% 
   #mutate(Weight_Std_gm3 = ifelse(daylight %in% "Night", Weight_Std_gm3*-1, weight_g)) %>% 
   summarise(TWgm3 = sum(Weight_gm3)) %>% 
   mutate(TWgm3 = ifelse(daylight %in% "Night", TWgm3*-1, TWgm3)) %>% 
   group_by(Site, daylight,Depth_Stratum) %>% 
   summarise(TWgm3_avg = mean(TWgm3),n(),sd=sd(TWgm3,na.rm = TRUE))
-TW_std_ID_Taxa_updated$Site <- factor(as.factor(TW_std_ID_Taxa_updated$Site), levels = c("SOTS","55S","58S"))
-TW_std_ID_Taxa_updated$Depth_Stratum <- factor(as.factor(TW_std_ID_Taxa_updated$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
-Taxa_updatedInd_plot <- ggplot(TW_std_ID_Taxa_updated,
+
+TW_std_ID_Taxa$Site <- factor(as.factor(TW_std_ID_Taxa$Site), levels = c("SOTS","55S","58S"))
+TW_std_ID_Taxa$Depth_Stratum <- factor(as.factor(TW_std_ID_Taxa$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
+
+
+TaxaInd_plot <- ggplot(TW_std_ID_Taxa,
                      mapping = aes(x = as.factor(Depth_Stratum),
                                    y = TWgm3_avg, fill = daylight))+
     geom_errorbar(aes(ymin = TWgm3_avg - sd, ymax= TWgm3_avg + sd, colour = factor(daylight)),
@@ -707,24 +755,26 @@ Taxa_updatedInd_plot <- ggplot(TW_std_ID_Taxa_updated,
   coord_flip()+
   facet_grid(~Site)+
   theme_bw()
-plot(Taxa_updatedInd_plot)
+
+plot(TaxaInd_plot)
 ggsave("figures/Tunicates.jpg")
-```
-```{r select individual FGB}
-#Fish_GB
-TW_std_ID_Taxa_updated <- ccomp_Taxa_updatedGroups %>% 
+
+#FGB
+TW_std_ID_Taxa <- ccomp_Taxa_Groups %>% 
   group_by(Site, daylight,Depth_Stratum,Deployment) %>% 
-  filter(Taxa_updated_Groups=="FGB") %>% 
- # filter(Taxa_updated =="Lampanyctus australis") %>% 
+  filter(Taxa_Groups=="FGB") %>% 
   filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") %>% 
   #mutate(Weight_Std_gm3 = ifelse(daylight %in% "Night", Weight_Std_gm3*-1, weight_g)) %>% 
   summarise(TWgm3 = sum(Weight_gm3)) %>% 
   mutate(TWgm3 = ifelse(daylight %in% "Night", TWgm3*-1, TWgm3)) %>% 
   group_by(Site, daylight,Depth_Stratum) %>% 
   summarise(TWgm3_avg = mean(TWgm3),n(),sd=sd(TWgm3,na.rm = TRUE))
-TW_std_ID_Taxa_updated$Site <- factor(as.factor(TW_std_ID_Taxa_updated$Site), levels = c("SOTS","55S","58S"))
-TW_std_ID_Taxa_updated$Depth_Stratum <- factor(as.factor(TW_std_ID_Taxa_updated$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
-Taxa_updatedInd_plot <- ggplot(TW_std_ID_Taxa_updated,
+
+TW_std_ID_Taxa$Site <- factor(as.factor(TW_std_ID_Taxa$Site), levels = c("SOTS","55S","58S"))
+TW_std_ID_Taxa$Depth_Stratum <- factor(as.factor(TW_std_ID_Taxa$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
+
+
+TaxaInd_plot <- ggplot(TW_std_ID_Taxa,
                      mapping = aes(x = as.factor(Depth_Stratum),
                                    y = TWgm3_avg, fill = daylight))+
     geom_errorbar(aes(ymin = TWgm3_avg - sd, ymax= TWgm3_avg + sd, colour = factor(daylight)),
@@ -740,24 +790,27 @@ Taxa_updatedInd_plot <- ggplot(TW_std_ID_Taxa_updated,
   coord_flip()+
   facet_grid(~Site)+
   theme_bw()
-plot(Taxa_updatedInd_plot)
+
+plot(TaxaInd_plot)
 ggsave("figures/Fish_GB.jpg")
-```
-```{r select Fish}
+
 #Fish
-TW_std_ID_Taxa_updated <- ccomp_Taxa_updatedGroups %>% 
+TW_std_ID_Taxa <- ccomp_Taxa_Groups %>% 
   group_by(Site, daylight,Depth_Stratum,Deployment) %>% 
-  filter(Taxa_updated_Groups=="F") %>% 
- # filter(Taxa_updated =="Lampanyctus australis") %>% 
+  filter(Taxa_Groups=="F") %>% 
+ # filter(Taxa =="Lampanyctus australis") %>% 
   filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") %>% 
   #mutate(Weight_Std_gm3 = ifelse(daylight %in% "Night", Weight_Std_gm3*-1, weight_g)) %>% 
   summarise(TWgm3 = sum(Weight_gm3)) %>% 
   mutate(TWgm3 = ifelse(daylight %in% "Night", TWgm3*-1, TWgm3)) %>% 
   group_by(Site, daylight,Depth_Stratum) %>% 
   summarise(TWgm3_avg = mean(TWgm3),n(),sd=sd(TWgm3,na.rm = TRUE))
-TW_std_ID_Taxa_updated$Site <- factor(as.factor(TW_std_ID_Taxa_updated$Site), levels = c("SOTS","55S","58S"))
-TW_std_ID_Taxa_updated$Depth_Stratum <- factor(as.factor(TW_std_ID_Taxa_updated$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
-Taxa_updatedInd_plot <- ggplot(TW_std_ID_Taxa_updated,
+
+TW_std_ID_Taxa$Site <- factor(as.factor(TW_std_ID_Taxa$Site), levels = c("SOTS","55S","58S"))
+TW_std_ID_Taxa$Depth_Stratum <- factor(as.factor(TW_std_ID_Taxa$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
+
+
+TaxaInd_plot <- ggplot(TW_std_ID_Taxa,
                      mapping = aes(x = as.factor(Depth_Stratum),
                                    y = TWgm3_avg, fill = daylight))+
     geom_errorbar(aes(ymin = TWgm3_avg - sd, ymax= TWgm3_avg + sd, colour = factor(daylight)),
@@ -773,25 +826,29 @@ Taxa_updatedInd_plot <- ggplot(TW_std_ID_Taxa_updated,
   coord_flip()+
   facet_grid(~Site)+
   theme_bw()
-plot(Taxa_updatedInd_plot)
+
+plot(TaxaInd_plot)
 ggsave("figures/Fish.jpg")
 
-```
-```{r select krill}
+
+
 #Krill
-TW_std_ID_Taxa_updated <- ccomp_Acat %>% 
+TW_std_ID_Taxa <- ccomp_Acat %>% 
   group_by(Site, daylight,Depth_Stratum,Deployment) %>% 
   filter(ACat=="Krill") %>% 
- # filter(Taxa_updated =="Lampanyctus australis") %>% 
+ # filter(Taxa =="Lampanyctus australis") %>% 
   filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") %>% 
   #mutate(Weight_Std_gm3 = ifelse(daylight %in% "Night", Weight_Std_gm3*-1, weight_g)) %>% 
   summarise(TWgm3 = sum(Weight_gm3)) %>% 
   mutate(TWgm3 = ifelse(daylight %in% "Night", TWgm3*-1, TWgm3)) %>% 
   group_by(Site, daylight,Depth_Stratum) %>% 
   summarise(TWgm3_avg = mean(TWgm3),n(),sd=sd(TWgm3,na.rm = TRUE))
-TW_std_ID_Taxa_updated$Site <- factor(as.factor(TW_std_ID_Taxa_updated$Site), levels = c("SOTS","55S","58S"))
-TW_std_ID_Taxa_updated$Depth_Stratum <- factor(as.factor(TW_std_ID_Taxa_updated$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
-Taxa_updatedInd_plot <- ggplot(TW_std_ID_Taxa_updated,
+
+TW_std_ID_Taxa$Site <- factor(as.factor(TW_std_ID_Taxa$Site), levels = c("SOTS","55S","58S"))
+TW_std_ID_Taxa$Depth_Stratum <- factor(as.factor(TW_std_ID_Taxa$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
+
+
+TaxaInd_plot <- ggplot(TW_std_ID_Taxa,
                      mapping = aes(x = as.factor(Depth_Stratum),
                                    y = TWgm3_avg, fill = daylight))+
     geom_errorbar(aes(ymin = TWgm3_avg - sd, ymax= TWgm3_avg + sd, colour = factor(daylight)),
@@ -807,24 +864,28 @@ Taxa_updatedInd_plot <- ggplot(TW_std_ID_Taxa_updated,
   coord_flip()+
   facet_grid(~Site)+
   theme_bw()
-plot(Taxa_updatedInd_plot)
+
+plot(TaxaInd_plot)
 ggsave("figures/Krill.jpg")
-```
+
 
 # Prawns
-```{r select Prawns}
-TW_std_ID_Taxa_updated <- ccomp_Acat %>% 
+TW_std_ID_Taxa <- ccomp_Acat %>% 
   group_by(Site, daylight,Depth_Stratum,Deployment) %>% 
   filter(ACat=="Prawn") %>% 
+ # filter(Taxa =="Lampanyctus australis") %>% 
   filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") %>% 
   #mutate(Weight_Std_gm3 = ifelse(daylight %in% "Night", Weight_Std_gm3*-1, weight_g)) %>% 
   summarise(TWgm3 = sum(Weight_gm3)) %>% 
   mutate(TWgm3 = ifelse(daylight %in% "Night", TWgm3*-1, TWgm3)) %>% 
   group_by(Site, daylight,Depth_Stratum) %>% 
   summarise(TWgm3_avg = mean(TWgm3),n(),sd=sd(TWgm3,na.rm = TRUE))
-TW_std_ID_Taxa_updated$Site <- factor(as.factor(TW_std_ID_Taxa_updated$Site), levels = c("SOTS","55S","58S"))
-TW_std_ID_Taxa_updated$Depth_Stratum <- factor(as.factor(TW_std_ID_Taxa_updated$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
-Taxa_updatedInd_plot <- ggplot(TW_std_ID_Taxa_updated,
+
+TW_std_ID_Taxa$Site <- factor(as.factor(TW_std_ID_Taxa$Site), levels = c("SOTS","55S","58S"))
+TW_std_ID_Taxa$Depth_Stratum <- factor(as.factor(TW_std_ID_Taxa$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
+
+
+TaxaInd_plot <- ggplot(TW_std_ID_Taxa,
                      mapping = aes(x = as.factor(Depth_Stratum),
                                    y = TWgm3_avg, fill = daylight))+
     geom_errorbar(aes(ymin = TWgm3_avg - sd, ymax= TWgm3_avg + sd, colour = factor(daylight)),
@@ -840,22 +901,26 @@ Taxa_updatedInd_plot <- ggplot(TW_std_ID_Taxa_updated,
   coord_flip()+
   facet_grid(~Site)+
   theme_bw()
-plot(Taxa_updatedInd_plot)
+
+plot(TaxaInd_plot)
 ggsave("figures/Prawns.jpg")
 ```
-```{r cyclothone}
+```{r individual taxa}
 #Cyclothone
 TW_std_Species <- ccomp_6_SumShot %>% 
   group_by(Site, daylight,Depth_Stratum,Deployment) %>% 
-  filter(Taxa_updated =="Cyclothone spp." | Taxa_updated == "Cyclothone sp.") %>% 
+  filter(Taxa_updated=="Cyclothone spp.") %>% 
   filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") %>% 
   #mutate(Weight_Std_gm3 = ifelse(daylight %in% "Night", Weight_Std_gm3*-1, weight_g)) %>% 
   summarise(TWgm3 = sum(Weight_Std_gm3)) %>% 
   mutate(TWgm3 = ifelse(daylight %in% "Night", TWgm3*-1, TWgm3)) %>% 
   group_by(Site, daylight,Depth_Stratum) %>% 
   summarise(TWgm3_avg = mean(TWgm3),n(),sd=sd(TWgm3,na.rm = TRUE))
+
 TW_std_Species$Site <- factor(as.factor(TW_std_Species$Site), levels = c("SOTS","55S","58S"))
 TW_std_Species$Depth_Stratum <- factor(as.factor(TW_std_Species$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
+
+
 Species_plot <- ggplot(TW_std_Species,
                      mapping = aes(x = as.factor(Depth_Stratum),
                                    y = TWgm3_avg, fill = daylight))+
@@ -872,23 +937,30 @@ Species_plot <- ggplot(TW_std_Species,
   coord_flip()+
   facet_grid(~Site)+
   theme_bw()
+
 plot(Species_plot)
 ggsave("figures/Cyclothone.jpg")
+
+
+
 ```
 
-```{r individual Taxa_updated }
+```{r individual taxa }
 #Lamancytus australis
 TW_std_Species <- ccomp_6_SumShot %>% 
   group_by(Site, daylight,Depth_Stratum) %>% 
-  filter(Taxa_updated =="Lampanyctus australis") %>% 
+  filter(Taxa_updated=="Lampanyctus australis") %>% 
   filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") %>% 
   summarise(nos = sum(nos)) %>% 
   mutate(nos = ifelse(daylight %in% "Night", nos*-1, nos)) 
  
  # group_by(Site, daylight,Depth_Stratum) %>% 
  # summarise(nos = mean(nos),n(),sd=sd(nos,na.rm = TRUE))
+
 TW_std_Species$Site <- factor(as.factor(TW_std_Species$Site), levels = c("SOTS","55S","58S"))
 TW_std_Species$Depth_Stratum <- factor(as.factor(TW_std_Species$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
+
+
 Species_plot <- ggplot(TW_std_Species,
                      mapping = aes(x = as.factor(Depth_Stratum),
                                    y = nos, fill = daylight))+
@@ -905,19 +977,16 @@ Species_plot <- ggplot(TW_std_Species,
   coord_flip()+
   facet_grid(~Site)+
   theme_bw()
+
 plot(Species_plot)
 ggsave("figures/Lampanyctus .jpg")
 ```
 
-```{r salps}
-
-
-
+```{r individual taxa}
 #salps
 TW_std_Species <- ccomp_6_SumShot %>% 
   group_by(Site, daylight,Depth_Stratum,Deployment) %>% 
-  filter(Taxa_updated_Groups=="Tunicates") %>% 
-  # filter(Taxa_updated=="Salpa fusiformis"| Taxa_updated =="Salpa thompsoni - aggregate" | Taxa_updated =="Thetys spp." | Taxa_updated =="Salpidae - undifferentiated") %>% 
+  filter(Taxa_updated=="Salpa fusiformis"| Taxa_updated =="Salpa thompsoni - aggregate" | Taxa_updated =="Thetys spp." | Taxa_updated =="Salpidae - undifferentiated") %>% 
   filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") %>% 
   #mutate(Weight_Std_gm3 = ifelse(daylight %in% "Night", Weight_Std_gm3*-1, weight_g)) %>% 
   summarise(TWgm3 = sum(Weight_Std_gm3)) %>% 
@@ -927,6 +996,8 @@ TW_std_Species <- ccomp_6_SumShot %>%
 
 TW_std_Species$Site <- factor(as.factor(TW_std_Species$Site), levels = c("SOTS","55S","58S"))
 TW_std_Species$Depth_Stratum <- factor(as.factor(TW_std_Species$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
+
+
 Species_plot <- ggplot(TW_std_Species,
                      mapping = aes(x = as.factor(Depth_Stratum),
                                    y = TWgm3_avg, fill = daylight))+
@@ -943,12 +1014,17 @@ Species_plot <- ggplot(TW_std_Species,
   coord_flip()+
   facet_grid(~Site)+
   theme_bw()
+
 plot(Species_plot)
 ggsave("figures/salps.jpg")
+
+
+
 ```
 
 
-```{r individual Taxa_updated}
+
+```{r individual taxa}
 #krill
 TW_std_Species <- ccomp_6_SumShot %>% 
   group_by(ACat,Site, daylight,Depth_Stratum,Deployment) %>% 
@@ -959,8 +1035,11 @@ TW_std_Species <- ccomp_6_SumShot %>%
   mutate(TWgm3 = ifelse(daylight %in% "Night", TWgm3*-1, TWgm3)) %>% 
   group_by(Site, daylight,Depth_Stratum) %>% 
   summarise(TWgm3_avg = mean(TWgm3),n(),sd=sd(TWgm3,na.rm = TRUE))
+
 TW_std_Species$Site <- factor(as.factor(TW_std_Species$Site), levels = c("SOTS","55S","58S"))
 TW_std_Species$Depth_Stratum <- factor(as.factor(TW_std_Species$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
+
+
 Species_plot <- ggplot(TW_std_Species,
                      mapping = aes(x = as.factor(Depth_Stratum),
                                    y = TWgm3_avg, fill = daylight))+
@@ -977,22 +1056,17 @@ Species_plot <- ggplot(TW_std_Species,
   coord_flip()+
   facet_grid(~Site)+
   theme_bw()
+
 plot(Species_plot)
 ggsave("figures/krill.jpg")
+
+
+
 ```
-
-
-
- 
-
-
-Catch comp grouped for summary graph
-NOTE This is not a good example as it averages each value - need to sum first then average for each deployment
-
 
 ```{r summary graph by Acat}
 ccomp_4 <-ccomp_3 %>% 
-  group_by(Site,daylight,Depth_Stratum,Taxa_updated_Groups, ACat) %>% 
+  group_by(Site,daylight,Depth_Stratum,Taxa_updated, ACat) %>% 
   summarise(n(),
             n =round(mean(nos,na.rm = TRUE),digits = 2), 
             sd_n = round(sd(nos, na.rm=TRUE),digits = 2),
@@ -1011,7 +1085,7 @@ ccomp_4$Site <- factor(as.factor(ccomp_4$Site), levels = c("SOTS","55S","58S"))
 ggplot(ccomp_4,
        mapping = aes(x =as.factor(Depth_Stratum),
                      y= Wgt))+
-  geom_col(aes(fill=Taxa_updated_Groups))+
+  geom_col(aes(fill=Taxa_updated))+
   coord_flip()+
   facet_grid(~Site)
 ```
