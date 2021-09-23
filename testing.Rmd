@@ -19,7 +19,7 @@ library(knitr)
 library(geosphere)
 library(janitor)
 # read in data
-ccomp <- read_csv("data/in2020_v08_samples_validation_210915_3.csv")
+ccomp <- read_csv("data/in2020_v08_samples_validation_210923.csv")
 length <- read_csv("data/IN2020_VO8_Lengths.csv")
 Shot <- read_csv("data/IN2020_V08_ShotData.csv")
 deployments <- read_csv("data/in2020_v08_deployments.csv")
@@ -111,9 +111,10 @@ ccomp_3 <- ccomp_2 %>%
                         ifelse(CAAB_updated >= 13000000, "Other",
                         ifelse(CAAB_updated >= 12000000, "Ctenophore",
                         ifelse(CAAB_updated >= 11123002, "Medusa",
+                        ifelse(CAAB_updated >= 11100001, "Siph_physonect",  
                         ifelse(CAAB_updated >= 11090000, "Siphonophore",
                         ifelse(CAAB_updated >=11000000, "Medusa",
-                          "Other")))))))))))))))))))))))))))) %>%
+                          "Other"))))))))))))))))))))))))))))) %>%
   #mutate(ACAT = ifelse(Taxa_updated == "Spongiobranchaea australis", "Other",ACat)) %>% 
   #mutate(ACAT = ifelse(is.na, "Other",ACat)) %>% 
   mutate(ACat = ifelse(Taxa_updated =="Larval Fish", "Fish",
@@ -152,6 +153,7 @@ ccomp_3 <- ccomp_2 %>%
 #tests
 ACat <- ccomp_3 %>% 
   distinct(ACat,Taxa_updated,CAAB_updated)
+# filter(ccomp_3, ACat == "Siph_physonect")
 ```
 
 # Add bladder data information from Micronekton Database
@@ -198,6 +200,9 @@ ccomp_3_ACATDB_TGroups <- ccomp_3_ACATDB %>%
 #checking data
 unique(paste0(ccomp_3_ACATDB_TGroups$ACat," ",ccomp_3_ACATDB_TGroups$Taxa_Groups))
 check <- select(ccomp_3_ACATDB_TGroups,ACat,CAAB,Taxa_updated)
+
+siph <- filter(ccomp_3_ACATDB_TGroups,ACat =="Siphonophore") %>% 
+  distinct(Taxa_updated)
 ```
 <!-- updating data from ANFC - this was done in Ccomp_1 Taxa_updated_Ved, CAAB_Ved -->
 <!-- ```{r adding fish Taxa_updated data} -->
@@ -206,6 +211,26 @@ check <- select(ccomp_3_ACATDB_TGroups,ACat,CAAB,Taxa_updated)
 <!-- #   mutate(Taxa_updated = ifelse(is.na(Taxa_updated_ed), Taxa_updated,Taxa_updated_ed)) %>%  -->
 <!-- #   mutate(CAAB_updated = ifelse(is.na(CAAB_ed), CAAB,CAAB_ed)) -->
 <!-- ``` -->
+
+#create higher grouping "Acoustic_Category"
+```{r Taxa_updated Groups}
+ccomp_3_ACATDB_Acoustic_Category <- ccomp_3_ACATDB_TGroups %>% 
+  mutate(Acoustic_Category = 
+           ifelse(ACat %in% c("Siphonophore","Ctenophore","Medusa","Chaetognath","Tunicates"), "G_nGB",
+           ifelse(ACat %in% c("Siph_physonect"), "G_GB",
+                  
+           ifelse(ACat%in%c("Crustacean","Prawn","Krill","Amphipods","Gnathaphausia", "Isopods",
+                            "Gnathapahausia","Copepod","Ostracod"),"Crustaceans",
+           ifelse(ACat%in%c("Gymnosome","Pteropod","pelagic gastropod","worms","Other"),"other",
+          #ifelse(ACat%in%c("F","FGB"),"F",
+           ACat)))))
+#checking data
+unique(paste0(ccomp_3_ACATDB_Acoustic_Category$Acoustic_Category," ",ccomp_3_ACATDB_Acoustic_Category$ACat))
+check <- select(ccomp_3_ACATDB_Acoustic_Category,Acoustic_Category,CAAB,Taxa_updated)
+
+siph <- filter(ccomp_3_ACATDB_Acoustic_Category,ACat =="Siphonophore") %>% 
+  distinct(Taxa_updated)
+```
 
 #filter data to exclude Subsamples, data where the Acc has been split, and Gut samples
 ```{r filter Samples}
