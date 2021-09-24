@@ -19,9 +19,9 @@ library(knitr)
 library(geosphere)
 library(janitor)
 # read in data
-ccomp <- read_csv("data/in2020_v08_samples_validation_210923.csv")
+ccomp <- read_csv("data/in2020_v08_samples_validation_210923.csv", col_types = list(Acc_ed = col_character()))
 length <- read_csv("data/IN2020_VO8_Lengths.csv")
-Shot <- read_csv("data/IN2020_V08_ShotData.csv")
+Shot_withgps <- read_csv("Results/IN2020_V08_Shot_startStop_gps.csv")
 deployments <- read_csv("data/in2020_v08_deployments.csv")
 MicroDB <- read_csv("data/Micronekton_CSIRO_Data_1992to2018.csv")
 ACatDATA <- read_csv("data/MicroDB_Acat_210916.csv")
@@ -31,23 +31,17 @@ ACatDATA <- read_csv("data/MicroDB_Acat_210916.csv")
 # Standardising Catch Comp Data
 
 ```{r}
-ccomp_1 <-ccomp %>% 
-  mutate(Taxa_updated = ifelse(is.na(Taxa_ed),Taxa,Taxa_ed)) %>% 
+ccomp_1 <-ccomp %>%  
   # remove na values
-  drop_na(Acc_ed) %>% 
+  drop_na(`Accession No`) %>% 
+  mutate(Taxa_updated = ifelse(is.na(Taxa_ed),Taxa,Taxa_ed)) %>% 
   # make a column that includes updateded taxa ID
   mutate(CAAB_updated = ifelse(is.na(CAAB_ed), CAAB,CAAB_ed)) %>% 
   mutate(Taxa_updated = ifelse(is.na(Taxa_ed), Taxa, Taxa_ed))
 
- 
-  # rename(Taxa_1 = Taxa) %>% 
-  # rename(Taxa_ed = Taxa)
-  
-
 ```
 
-
-
+rename columns and taxa
 ```{r catch comp}
 # change to uniform names for 'deployment' and 'Accession number' and match species names in length data
 
@@ -201,8 +195,8 @@ ccomp_3_ACATDB_TGroups <- ccomp_3_ACATDB %>%
 unique(paste0(ccomp_3_ACATDB_TGroups$ACat," ",ccomp_3_ACATDB_TGroups$Taxa_Groups))
 check <- select(ccomp_3_ACATDB_TGroups,ACat,CAAB,Taxa_updated)
 
-siph <- filter(ccomp_3_ACATDB_TGroups,ACat =="Siphonophore") %>% 
-  distinct(Taxa_updated)
+siph <- filter(ccomp_3_ACATDB_TGroups,ACat =="Siphonophore") 
+
 ```
 <!-- updating data from ANFC - this was done in Ccomp_1 Taxa_updated_Ved, CAAB_Ved -->
 <!-- ```{r adding fish Taxa_updated data} -->
@@ -230,6 +224,9 @@ check <- select(ccomp_3_ACATDB_Acoustic_Category,Acoustic_Category,CAAB,Taxa_upd
 
 siph <- filter(ccomp_3_ACATDB_Acoustic_Category,ACat =="Siphonophore") %>% 
   distinct(Taxa_updated)
+
+Taxa_Groupings <- ccomp_3_ACATDB_Acoustic_Category %>% 
+  distinct(Acoustic_Category,ACat,Taxa_Groups)
 ```
 
 #filter data to exclude Subsamples, data where the Acc has been split, and Gut samples
@@ -237,9 +234,9 @@ siph <- filter(ccomp_3_ACATDB_Acoustic_Category,ACat =="Siphonophore") %>%
 #list sample types
 #unique(ccomp_4$Sample_Type)
 # choose only "S" which is a full sample (not subsampele, renamedsplit or gut sample)
-ccomp_4 <- ccomp_3_ACATDB_TGroups %>%
+ccomp_4 <- ccomp_3_ACATDB_Acoustic_Category %>%
   filter(Sample_Type == "S") %>% 
-  select(Voyage,Deployment,Acc,Acc_ed,ACat,Taxa_Groups,CAAB,Taxa_updated,CAAB_updated,Taxa_updated,Count,weight_g,Storage_temp,Preservative) 
+  select(Voyage,Deployment,Acc,Acc_ed,ACat,Taxa_Groups,Acoustic_Category, CAAB,Taxa_updated,CAAB_updated,Taxa_updated,Count,weight_g,Storage_temp,Preservative) 
 
 
 
@@ -275,10 +272,9 @@ Prawns <- ccomp_3_ACATDB_TGroups %>%
   select(Deployment,Acc,Taxa_updated)
 ```
 
-
 # Shot Data
 
-# Volume Filtered Calculation
+## Volume Filtered Calculation
 RMT 16 net area = 16m^2
 speed of vessel on average  = 1kt *** but check with Grafana
 time of tow = mins
@@ -287,83 +283,84 @@ conversion of kph to mpm= kph * 16.667 (mpm)
 volume filtered (m^3)= distance (m)* net mouth area (m^2) = ((speed (m/min) * time towed (min)) * net area (m^2))
 
 ```{r volume filtered calculation}
-Shot_1 <- Shot %>% 
-  filter(Category== "Start" | Category == "Stop") %>% 
-  filter("Op Number" != '26') %>% 
-   select(-Date,-Depth,-'Sea Water Temperature', -Author, - 'Op owner', date = 'Real Date')%>%
-  
-  #correct entry errors
-  # Op  29 start date is incorrect "2020-12-28 15:44:00		 update to 2020-12-26 15:44:00	
-  mutate(date = ifelse(date == "2020-12-28 15:44:00","2020-12-26 15:44:00",date)) %>% 
-  
-   
-  #change Latitude to Decimal degrees
-  mutate(Lat = Latitude) %>% 
-  separate(Lat, c("deg","min","dir"),sep = " ") %>% 
-  mutate(deg = as.numeric(deg)) %>% 
-  mutate(dir = as.numeric(dir)) %>% 
-  mutate(lat_decdeg = -deg + dir/60) %>% 
-  #mutate(Date1 = date) %>% 
-  #separate(date, c("Date","Time"), sep = " ") %>% 
-  mutate(DateR = date) %>% 
-  mutate(date = as.POSIXct(date, format = "%d/%m/%Y %H:%M")) %>% 
-  
-#change longitude to decimal degrees
-mutate(Long = Longitude) %>% 
-  separate(Long, c("ldeg","lmin","ldir"),sep = " ") %>% 
-  mutate(ldeg = as.numeric(ldeg)) %>% 
-  mutate(ldir = as.numeric(ldir)) %>% 
-  mutate(long_decdeg = -ldeg + ldir/60) %>% 
-  select(-deg,-min,-dir,-ldeg,-lmin,-ldir) %>%
-  
-  #fix up the inconsistencies in site
-  separate(Location,c("Site", "S","Cycle","Repeat")) %>% 
-  mutate(Site = ifelse(Site =='55',"55S",
-                       ifelse(Site == '58', "58S",Site))) %>% 
-  arrange(lat_decdeg)
- 
-# Spitting the data into two tables one for start and one for stop
-start <- Shot_1 %>% 
-  filter(Category == "Start") 
-stop <- Shot_1 %>% 
-  filter(Category =="Stop") %>% 
-  select('Op number', lat_decdeg,long_decdeg,Site,date,DateR) 
-##Volume Filtered by calculating distance traveled by Ships Speed and tow time
-# combining data to have start and stop data for time and position in one row. To calculate distance and time differences
-Shot_2 <- start %>%
-  left_join(stop, by = 'Op number', suffix= c("_start", "_stop")) %>%
-  select(-Category, Site=Site_start, Net_Name = Type, Depth_Stratum = Subject,
-         Deployment = 'Op number') %>% 
-  separate(Depth_Stratum,c("Depth_Stratum","daylight"),sep = " ") %>% 
-  mutate(towtime = difftime(date_stop,date_start, units = "mins")) %>% 
-  mutate(Speed_mpm = 1*1.852*16.667) %>% 
-  mutate(distance_m_byspeed = Speed_mpm * towtime) %>%
-  mutate(distance_m_byspeed=as.numeric(distance_m_byspeed)) %>% 
-  mutate(VolumeFiltered_m3_speed = distance_m_byspeed * 16) %>% 
-  mutate(towtime = difftime(date_stop,date_start, units = "mins")) %>% 
-  filter(as.factor(Deployment) != '26') %>% 
-  select(-"S", -"Cycle",-"Repeat") %>% 
-  arrange()
-write.csv(Shot_2,"Results/IN2020_V08_Shot_startStop.csv")
- 
-Shot_3 <- Shot_2 %>% 
-  select(Site = Site, daylight, Deployment,Depth_Stratum) 
-  
-  
-tally <- Shot_2 %>% 
-  #filter(Depth_Stratum == "Epi" | Depth_Stratum =="Lmeso" | Depth_Stratum == "Meso") %>% 
-  group_by(Site,daylight, Depth_Stratum) %>% 
-  summarise(n=n())
-tally_1 <- tally %>% 
-  spread(daylight,n)
-  
-#CR_Date$hours <- with(CR_Date, difftime(pos2,pos1,units="hours") )
-#CR_Date
- 
-Shottest <- Shot_1 %>% 
- mutate(date = ifelse(date == "2020-12-28 15:44:00","2020-12-26 15:44:00",date))
-                      
-#mutate(Taxa_updated = ifelse(Taxa_updated =="kriffichthys andersoni","Krefftichthys anderssoni",Taxa_updated)) 
+# don't need this code b/c shot data has it own file now. Need to use the shot data with added gps distance calculation and gps VFiltered calculation. 
+# Shot_1 <- Shot %>% 
+#   filter(Category== "Start" | Category == "Stop") %>% 
+#   filter("Op Number" != '26') %>% 
+#    select(-Date,-Depth,-'Sea Water Temperature', -Author, - 'Op owner', date = 'Real Date')%>%
+#   
+#   #correct entry errors
+#   # Op  29 start date is incorrect "2020-12-28 15:44:00		 update to 2020-12-26 15:44:00	
+#   mutate(date = ifelse(date == "2020-12-28 15:44:00","2020-12-26 15:44:00",date)) %>% 
+#   
+#    
+#   #change Latitude to Decimal degrees
+#   mutate(Lat = Latitude) %>% 
+#   separate(Lat, c("deg","min","dir"),sep = " ") %>% 
+#   mutate(deg = as.numeric(deg)) %>% 
+#   mutate(dir = as.numeric(dir)) %>% 
+#   mutate(lat_decdeg = -deg + dir/60) %>% 
+#   #mutate(Date1 = date) %>% 
+#   #separate(date, c("Date","Time"), sep = " ") %>% 
+#   mutate(DateR = date) %>% 
+#   mutate(date = as.POSIXct(date, format = "%d/%m/%Y %H:%M")) %>% 
+#   
+# #change longitude to decimal degrees
+# mutate(Long = Longitude) %>% 
+#   separate(Long, c("ldeg","lmin","ldir"),sep = " ") %>% 
+#   mutate(ldeg = as.numeric(ldeg)) %>% 
+#   mutate(ldir = as.numeric(ldir)) %>% 
+#   mutate(long_decdeg = -ldeg + ldir/60) %>% 
+#   select(-deg,-min,-dir,-ldeg,-lmin,-ldir) %>%
+#   
+#   #fix up the inconsistencies in site
+#   separate(Location,c("Site", "S","Cycle","Repeat")) %>% 
+#   mutate(Site = ifelse(Site =='55',"55S",
+#                        ifelse(Site == '58', "58S",Site))) %>% 
+#   arrange(lat_decdeg)
+#  
+# # Spitting the data into two tables one for start and one for stop
+# start <- Shot_1 %>% 
+#   filter(Category == "Start") 
+# stop <- Shot_1 %>% 
+#   filter(Category =="Stop") %>% 
+#   select('Op number', lat_decdeg,long_decdeg,Site,date,DateR) 
+# ##Volume Filtered by calculating distance traveled by Ships Speed and tow time
+# # combining data to have start and stop data for time and position in one row. To calculate distance and time differences
+# Shot_2 <- start %>%
+#   left_join(stop, by = 'Op number', suffix= c("_start", "_stop")) %>%
+#   select(-Category, Site=Site_start, Net_Name = Type, Depth_Stratum = Subject,
+#          Deployment = 'Op number') %>% 
+#   separate(Depth_Stratum,c("Depth_Stratum","daylight"),sep = " ") %>% 
+#   mutate(towtime = difftime(date_stop,date_start, units = "mins")) %>% 
+#   mutate(Speed_mpm = 1*1.852*16.667) %>% 
+#   mutate(distance_m_byspeed = Speed_mpm * towtime) %>%
+#   mutate(distance_m_byspeed=as.numeric(distance_m_byspeed)) %>% 
+#   mutate(VolumeFiltered_m3_speed = distance_m_byspeed * 16) %>% 
+#   mutate(towtime = difftime(date_stop,date_start, units = "mins")) %>% 
+#   filter(as.factor(Deployment) != '26') %>% 
+#   select(-"S", -"Cycle",-"Repeat") %>% 
+#   arrange()
+# write.csv(Shot_2,"Results/IN2020_V08_Shot_startStop.csv")
+#  
+# Shot_3 <- Shot_2 %>% 
+#   select(Site = Site, daylight, Deployment,Depth_Stratum) 
+#   
+#   
+# tally <- Shot_2 %>% 
+#   #filter(Depth_Stratum == "Epi" | Depth_Stratum =="Lmeso" | Depth_Stratum == "Meso") %>% 
+#   group_by(Site,daylight, Depth_Stratum) %>% 
+#   summarise(n=n())
+# tally_1 <- tally %>% 
+#   spread(daylight,n)
+#   
+# #CR_Date$hours <- with(CR_Date, difftime(pos2,pos1,units="hours") )
+# #CR_Date
+#  
+# Shottest <- Shot_1 %>% 
+#  mutate(date = ifelse(date == "2020-12-28 15:44:00","2020-12-26 15:44:00",date))
+#                       
+# #mutate(Taxa_updated = ifelse(Taxa_updated =="kriffichthys andersoni","Krefftichthys anderssoni",Taxa_updated)) 
 ```
 
 # Length Data
@@ -415,14 +412,23 @@ ccomp_5 <- left_join(ccomp_4, length_2_avg, by = c("Deployment", "Acc_ed"))
 ```
 
 
+# Shot Data and Catch Data
 
-# Joining Shot and Catch data for total weight estimates
+## Joining Shot and Catch data for total weight estimates
 ```{r}
 deployments_1 <- deployments %>% 
   select(Operation, Tweight_g =`Total Weight (g)`, Sweight_g =`Total Sorted Weight (g)`)
-Sol_Micro <-left_join(Shot_2,deployments_1, by= c("Deployment" = "Operation")) %>%  
-  mutate(StdW_gm3 = Sweight_g / VolumeFiltered_m3_speed) %>% 
-  mutate(Stdw_g1000m3 = StdW_gm3*1000) %>%
+  Sol_Micro <-left_join(Shot_withgps,deployments_1, by= c("Deployment" = "Operation")) %>%  
+  #use updated shot data to provide the option of standardising catch by VF as estiamted by gps
+  #Sol_Micro <-left_join(Shot_2,deployments_1, by= c("Deployment" = "Operation")) %>% 
+  mutate(StdW_gm3_gps = Sweight_g / VolumeFiltered_m3_gps) %>% 
+  mutate(StdW_gm3_sp = Sweight_g / VolumeFiltered_m3_speed) %>% 
+    
+    #### change the estimate by gps and speed here #######
+  #mutate(Stdw_g1000m3 = StdW_gm3_sp*1000) %>%
+  mutate(Stdw_g1000m3 = StdW_gm3_gps*1000) %>%
+    ##############################################################
+    
   select(-'Message ID', -Latitude,-Longitude, -Site_stop, -date_stop) %>%   filter(Depth_Stratum == "Epi" | Depth_Stratum =="Lmeso" | Depth_Stratum == "Meso")
   
   #group_by(daylight, Depth_Stratum) %>% 
@@ -440,8 +446,8 @@ Sol_Micro_summary$Depth_Stratum <- factor(as.factor(Sol_Micro_summary$Depth_Stra
 ```{r catch comp summary}
 #summarise data by species for each Deployment
 ccomp_5_summary<- ccomp_5 %>% 
-  group_by(Deployment,ACat,Taxa_Groups,Taxa_updated,CAAB_updated) %>% 
-  summarise(nos= sum(Count, na.rm = TRUE),weight_g = sum(weight_g, na.rm = TRUE)) %>% 
+  group_by(Deployment,ACat,Taxa_Groups,Acoustic_Category,Taxa_updated,CAAB_updated) %>% 
+  summarise(nos= sum(Count, na.rm = TRUE),weight_g = sum(weight_g, na.rm = TRUE), AvgL_mm) %>% 
   rowid_to_column("ID")
 #ccomp_AEC <- ccomp_1 %>% 
 #  filter(sub !="subsample" | sub !="sub") %>% 
@@ -451,91 +457,122 @@ ccomp_5_summary<- ccomp_5 %>%
 # filter(ccomp_4,Deployment == 39, Acc== 19)
 ```
 
+# Bringing in Shot Data with Volume Filtered as estimated by the Ship's position
 
-
-# Catch comp linked with shot data - ACat
-
-## Standardising the catch comp using Volumen Filtered
+## Standardising the catch comp with Volumen Filtered
 ```{r catch comp with shot data - Acoustic Categories}
 ccomp_6_SumShot <- ccomp_5_summary %>% 
-  left_join(Shot_2, by="Deployment") %>% 
-  mutate(Weight_Std_gm3 = weight_g / VolumeFiltered_m3_speed) %>% 
-  mutate(Abd_Std_nosm3 = nos / VolumeFiltered_m3_speed) %>% 
-  select(ID,Site,daylight,Depth_Stratum,Deployment,ACat,Taxa_Groups,Taxa_updated,CAAB_updated,
-         nos,weight_g,Weight_Std_gm3,Abd_Std_nosm3,
+  left_join(Shot_withgps, by="Deployment") %>% 
+  mutate(Weight_Std_gm3_sp = weight_g / VolumeFiltered_m3_speed) %>%
+  mutate(Weight_Std_gm3_gps = weight_g / VolumeFiltered_m3_gps) %>%
+  mutate(Abd_Std_nosm3_sp = nos / VolumeFiltered_m3_speed) %>% 
+  mutate(Abd_Std_nosm3_gps = nos / VolumeFiltered_m3_gps) %>% 
+  select(ID,Site,daylight,Depth_Stratum,Deployment,ACat,Taxa_Groups,Acoustic_Category, Taxa_updated,CAAB_updated,
+         nos,weight_g,
+         
+         Weight_Std_gm3_gps = Weight_Std_gm3_gps, #select gps or speed
+         Abd_Std_nosm3_gps = Weight_Std_gm3_gps, #select gps or speed
+         AvgL_mm,
          datetime_UTC_start = date_start,datetime_UTC_stop = date_stop,
-         lat_decdeg_start, long_decdeg_start, lat_decdeg_stop, long_decdeg_stop, VolumeFiltered_m3_speed) %>% 
+         lat_decdeg_start, long_decdeg_start, lat_decdeg_stop, long_decdeg_stop, VolumeFiltered_m3_speed,VolumeFiltered_m3_gps) %>% 
   #making sure dupicate row are ignored
   distinct(ID,.keep_all = TRUE)
 
 # Dups <-ccomp_6_SumShot[duplicated(ccomp_6_SumShot$ID), ]
 
 write.csv(ccomp_6_SumShot,"Results/IN2020_V08_CatchComp.csv")
+```
 
-
-# this is not quite what i'm after !!!
-Species_by_Site <- ccomp_6_SumShot %>% 
-  #select(Deployment)
-  group_by(Site,daylight,Depth_Stratum) %>% 
-  distinct(Taxa_updated, .keep_all = TRUE)
-  
-test <- ccomp_5_summary %>% 
-  filter(Taxa_updated == "Fish")
-#mutate(ACat = ifelse(CAAB == 99110232, "Tunicates",
-unique(ccomp_5_summary$ACat)
-unique(ccomp_5_summary$Taxa_updated)
-unique(paste0(ccomp_5_summary$ACat," ",ccomp_5_summary$Taxa_updated))
-
-#adding 0 in for graphs
-  ccomp_6_SumShot_zeros <- ccomp_6_SumShot %>% 
-  arrange() %>% 
-  complete(ID,CAAB_updated, Taxa_updated, fill = list(Nos =0,Weight_g=0, Weight_Std_gm3 = 0, Abd_Std_nosm3= 0))%>%
-  arrange(ID) %>% 
-  fill(Site, .direction = "down")%>%
-  fill(daylight, .direction = "down") %>% 
-  fill(Depth_Stratum, .direction = "down")%>%
-  fill(Deployment, .direction = "down")%>%
-  fill(ACat,.direction = "down") %>% 
-  fill(Taxa_Groups,.direction = "down") %>% 
-  fill(Deployment, .direction = "down")%>%
-  fill(datetime_UTC_start, .direction = "down")%>%
-    fill(datetime_UTC_stop, .direction = "down")%>%
-    fill(lat_decdeg_start, .direction = "down")%>%
-    fill(lat_decdeg_stop, .direction = "down")%>%
-    fill(long_decdeg_start, .direction = "down")%>%
-    fill(long_decdeg_stop, .direction = "down")
+# Filtered for Micronekton 
+```{r}
+# Micronekton only !!!
+ccomp_6_SumShot_Micro <- ccomp_6_SumShot %>% 
+  filter(AvgL_mm >=20) 
+  #filter(ACat != "Tunicates" & ACat != "Medusa") 
 ``` 
 
+```{}
+# # this is not quite what i'm after !!!
+# Species_by_Site <- ccomp_6_SumShot %>% 
+#   #select(Deployment)
+#   group_by(Site,daylight,Depth_Stratum) %>% 
+#   distinct(Taxa_updated, .keep_all = TRUE)
+#   
+# test <- ccomp_5_summary %>% 
+#   filter(Taxa_updated == "Fish")
+# #mutate(ACat = ifelse(CAAB == 99110232, "Tunicates",
+# unique(ccomp_5_summary$ACat)
+# unique(ccomp_5_summary$Acoustic_Category)
+# #unique(ccomp_5_summary$Taxa_updated)
+#unique(paste0(ccomp_5_summary$ACat," ",ccomp_5_summary$Taxa_updated))
+
+#adding 0 in for graphs - this is not the right place to do this - do it in the summarised data section when summarising data for the graphs
+  # ccomp_6_SumShot_zeros <- ccomp_6_SumShot %>% 
+  # arrange() %>% 
+  # complete(ID,CAAB_updated, Taxa_updated, fill = list(Nos =0,Weight_g=0, Weight_Std_gm3 = 0, Abd_Std_nosm3= 0))%>%
+  # arrange(ID) %>% 
+  # fill(Site, .direction = "down")%>%
+  # fill(daylight, .direction = "down") %>% 
+  # fill(Depth_Stratum, .direction = "down")%>%
+  # fill(Deployment, .direction = "down")%>%
+  # fill(ACat,.direction = "down") %>% 
+  # fill(Taxa_Groups,.direction = "down") %>% 
+  # fill(Deployment, .direction = "down")%>%
+  # fill(datetime_UTC_start, .direction = "down")%>%
+  #   fill(datetime_UTC_stop, .direction = "down")%>%
+  #   fill(lat_decdeg_start, .direction = "down")%>%
+  #   fill(lat_decdeg_stop, .direction = "down")%>%
+  #   fill(long_decdeg_start, .direction = "down")%>%
+  #   fill(long_decdeg_stop, .direction = "down")
+``` 
 #Total Summarised Standardised catch
 
 ```{r total std weight}
+# Total standardised weight
 TW_std <- ccomp_6_SumShot %>% 
   group_by(Site, daylight,Depth_Stratum,Deployment) %>% 
   filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") %>% 
   #mutate(Weight_Std_gm3 = ifelse(daylight %in% "Night", Weight_Std_gm3*-1, weight_g)) %>% 
   summarise(TWgm3 = sum(Weight_Std_gm3)) %>% 
   mutate(TWgm3 = ifelse(daylight %in% "Night", TWgm3*-1, TWgm3)) 
-TW_std$Depth_Stratum <- factor(as.factor(TW_std$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
-TW_std$Site <- factor(as.factor(TW_std$Site), levels = c("SOTS","55S","58S"))
-TW_std_1 <- TW_std %>% 
-  group_by(Site,daylight,Depth_Stratum) %>% 
- #mutate(TW_std = TW_std*1000) %>% 
-  summarise(n(),TW_std = round(mean(TWgm3,na.rm = TRUE),digits = 2),
-            sd = round(sd(TWgm3,na.rm = TRUE),digits = 2)
-            )
-tw<-ggplot(TW_std_1,
-       mapping = aes(x = as.factor(Depth_Stratum), 
-                     y = TW_std, fill = daylight))+
-  scale_fill_brewer()+
-  geom_errorbar(aes(ymin = TW_std - sd, ymax= TW_std + sd),
-                width = 0.4, position = position_dodge(0)) +
-geom_col()+
-  coord_flip()+
-  facet_grid(~Site)+
-  theme_bw()
-tw
-  
-ggsave(tw,filename = "Results/tw.jpg")
+
+unique(ccomp_6_SumShot$ACat)
+# total Std weight for Micronekton
+   # AvgL_mmm - > 20mm
+   # ACat != Tunicates
+   #
+# 
+TW_std_bigger20mm <- ccomp_6_SumShot %>% 
+  filter(AvgL_mm >= 20) %>% 
+  group_by(Site, daylight,Depth_Stratum,Deployment) %>% 
+  filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") %>% 
+  #mutate(Weight_Std_gm3 = ifelse(daylight %in% "Night", Weight_Std_gm3*-1, weight_g)) %>% 
+  summarise(TWgm3 = sum(Weight_Std_gm3)) %>% 
+  mutate(TWgm3 = ifelse(daylight %in% "Night", TWgm3*-1, TWgm3)) 
+
+# Create Plot
+
+# TW_std$Depth_Stratum <- factor(as.factor(TW_std$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
+# TW_std$Site <- factor(as.factor(TW_std$Site), levels = c("SOTS","55S","58S"))
+# TW_std_1 <- TW_std %>% 
+#   group_by(Site,daylight,Depth_Stratum) %>% 
+#  #mutate(TW_std = TW_std*1000) %>% 
+#   summarise(n(),TW_std = round(mean(TWgm3,na.rm = TRUE),digits = 2),
+#             sd = round(sd(TWgm3,na.rm = TRUE),digits = 2)
+#             )
+# tw<-ggplot(TW_std_1,
+#        mapping = aes(x = as.factor(Depth_Stratum), 
+#                      y = TW_std, fill = daylight))+
+#   scale_fill_brewer()+
+#   geom_errorbar(aes(ymin = TW_std - sd, ymax= TW_std + sd),
+#                 width = 0.4, position = position_dodge(0)) +
+# geom_col()+
+#   coord_flip()+
+#   facet_grid(~Site)+
+#   theme_bw()
+# tw
+#   
+# ggsave(tw,filename = "Results/tw.jpg")
 ```
 
 ```{r total weight summary}
@@ -565,7 +602,7 @@ ggsave("figures/TWeight_gm3.jpg")
 
 Summary by ACat and Taxa_updated
 Joining Shot data to Catch Comp
-
+# Summary by Taxa Groups
 ```{r acoustic groups summary}
 #group for site, day, depth - sum values
 # sum via the Taxa_updated for each deployment
@@ -573,17 +610,41 @@ ccomp_Taxa_Groups <-ccomp_6_SumShot %>%
   group_by(Site,daylight,Depth_Stratum,Deployment, Taxa_Groups) %>% 
   summarise(Nos = sum(nos), Weight_g = sum(weight_g),
             Weight_gm3 = sum(Weight_Std_gm3),Abd_nosm3 =sum(Abd_Std_nosm3))
-# sum via ACat for each deployment
+
+ccomp_Taxa_Groups_M <-ccomp_6_SumShot_Micro %>% 
+  group_by(Site,daylight,Depth_Stratum,Deployment, Taxa_Groups) %>% 
+  summarise(Nos = sum(nos), Weight_g = sum(weight_g),
+            Weight_gm3 = sum(Weight_Std_gm3),Abd_nosm3 =sum(Abd_Std_nosm3))
+
+
+# sum via ACat for for each deployment
 ccomp_Acat <-ccomp_6_SumShot %>% 
   group_by(Site,daylight,Depth_Stratum,Deployment, ACat) %>% 
   summarise(Nos = sum(nos), Weight_g = sum(weight_g),
             Weight_gm3 = sum(Weight_Std_gm3),Abd_nosm3 =sum(Abd_Std_nosm3))
-# # joining Shot data to catch comp
-####unsure of this code at the momoment#############
-# ccomp_7_shot<- ccomp_1 %>% 
-#   left_join(Shot_2, by ="Deployment")
-# 
-# write.csv(ccomp_7_shot,"Results/CatchcompshotRaw1.csv")
+
+ccomp_Acat_M <-ccomp_6_SumShot_Micro %>% 
+  group_by(Site,daylight,Depth_Stratum,Deployment, ACat) %>% 
+  summarise(Nos = sum(nos), Weight_g = sum(weight_g),
+            Weight_gm3 = sum(Weight_Std_gm3),Abd_nosm3 =sum(Abd_Std_nosm3))
+
+# summarise by Acoustic_Category for each deployment
+ccomp_Acoustic_Category_M <-ccomp_6_SumShot_Micro %>% 
+  group_by(Site,daylight,Depth_Stratum,Deployment, Acoustic_Category) %>% 
+  summarise(Nos = sum(nos), Weight_g = sum(weight_g),
+            Weight_gm3 = sum(Weight_Std_gm3),Abd_nosm3 =sum(Abd_Std_nosm3))
+
+# summarise by Taxa_updated for each deployment
+ccomp_Ind_Taxa_M <-ccomp_6_SumShot_Micro %>% 
+  group_by(Site,daylight,Depth_Stratum,Deployment, Taxa_updated) %>% 
+  summarise(Nos = sum(nos), Weight_g = sum(weight_g),
+            Weight_gm3 = sum(Weight_Std_gm3),Abd_nosm3 =sum(Abd_Std_nosm3))
+#summarise by Taxa_updated,depth and day 
+ccomp_Ind_Taxa_M_noDep <- ccomp_Ind_Taxa_M %>% 
+  group_by(Site,daylight,Depth_Stratum, Taxa_updated) %>% 
+    summarise(Nos = sum(Nos), Wtgm3 = sum(Weight_g),Anosm3 = sum(Abd_nosm3),Wtgm3_avg = mean(Weight_gm3),Anosm3_avg = mean(Abd_nosm3))
+
+
 ```
 
 PROPORTION Taxa
@@ -649,7 +710,7 @@ Taxa_LMeso <- ggplot(Taxa_TW %>%
        aes(y = TWgm3,x = daylight, fill = Taxa_Groups))+
   geom_bar(position = "fill", stat = "identity")+
   facet_grid(.~Site)+
-  scale_fill_manual(values=c("purple","grey","orange","dark blue","dark green","light green","light blue", "light pink", "yellow"))+
+  scale_fill_manual(values=c("purple","grey","orange","dark blue","dark green","light green","light blue", "light pink", "yellow","black"))+
   theme(legend.title = element_blank(),
         legend.box = "horizontal",
         legend.position = "bottom",
@@ -681,7 +742,7 @@ Taxa55 <- ggplot(Taxa_TW %>%
   geom_bar(position = "fill", stat = "identity")+
   theme(legend.position = "none")+
   facet_grid(.~daylight)+
-  scale_fill_manual(values=c("purple","grey","orange","dark blue","dark green","light green","light blue", "light pink","yellow"))+
+  scale_fill_manual(values=c("purple","grey","orange","dark blue","dark green","light green","light blue", "light pink","yellow","black"))+
    theme(text = element_text(size = 9))+
   ylab("55S")+
   xlab("")
@@ -693,7 +754,7 @@ Taxa58 <- ggplot(Taxa_TW %>%
   geom_bar(position = "fill", stat = "identity")+
   theme(legend.position = "none")+
   facet_grid(.~daylight)+
-  scale_fill_manual(values=c("purple","grey","orange","dark blue","dark green","light green","light blue", "light pink", "yellow"))+
+  scale_fill_manual(values=c("purple","grey","orange","dark blue","dark green","light green","light blue", "light pink", "yellow","black"))+
   #theme_bw()+
   theme(text = element_text(size = 9))+
   theme(legend.title = element_blank(),
@@ -709,9 +770,58 @@ grid.arrange(TaxaSots,Taxa55,Taxa58, ncol= 1, nrow = 3, widths = c(4), heights =
 PropTaxaAll <- arrangeGrob(TaxaSots,Taxa55,Taxa58, ncol= 1, nrow = 3, widths = c(4), heights = c(20,20,30)) # creates plot as an object
 ggsave("figures/PropTaxaAll.jpg",PropTaxaAll) # saves the plot to file :)
 ```
+# PLOTS 
+
+## cc
+## ccomp_Taxa_Groups derived from "ccomp_6_SumShot"
+## Summary by Depth, Daylight and by individual Taxa
 
 
-#Depth Distriubtion by individual Taxa
+### Plots by Acoustic_Category
+```{r select individual Acoustic_Category}
+#Acoustic_Category - G_nGB
+TW_std_ID_Taxa <- ccomp_Acoustic_Category%>% 
+  group_by(Site,daylight,Depth_Stratum,Deployment) %>% 
+  filter(Acoustic_Category=="G_nGB") %>% 
+ # filter(Taxa_updated =="Lampanyctus australis") %>% 
+  filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") %>% 
+  #mutate(Weight_Std_gm3 = ifelse(daylight %in% "Night", Weight_Std_gm3*-1, weight_g)) %>% 
+  summarise(TWgm3 = sum(Weight_gm3)) %>% 
+  mutate(TWgm3 = ifelse(daylight %in% "Night", TWgm3*-1, TWgm3)) %>% 
+  group_by(Site, daylight,Depth_Stratum) %>% 
+  summarise(TWgm3_avg = mean(TWgm3),n(),sd=sd(TWgm3,na.rm = TRUE))
+TW_std_ID_Taxa$Site <- factor(as.factor(TW_std_ID_Taxa$Site), levels = c("SOTS","55S","58S"))
+TW_std_ID_Taxa$Depth_Stratum <- factor(as.factor(TW_std_ID_Taxa$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
+Taxa_Ind_plot <- ggplot(TW_std_ID_Taxa,
+                     mapping = aes(x = as.factor(Depth_Stratum),
+                                   y = TWgm3_avg, fill = daylight))+
+    geom_errorbar(aes(ymin = TWgm3_avg - sd, ymax= TWgm3_avg + sd, colour = factor(daylight)),
+                width = 0.3, position = position_dodge(0)) +
+  #geom_errorbar(aes(ymin=y, ymax=y_upper.error), colour="blue", width = 0.1) +
+  #geom_errorbar(aes(ymin=y_lower.error, ymax=y), colour="red", width = 0.1) +
+  xlab("Depth Stratum")+
+  ylab("Standardised wet weight (g/m^3)")+
+  #scale_x_discrete(limits = c(-0.9,0.9))+
+  scale_colour_manual("daylight",values=c("light blue","dark blue"))+
+  scale_fill_manual("daylight",values=c("light blue","dark blue"))+
+  geom_col()+
+  coord_flip()+
+  facet_grid(~Site)+
+  theme_bw()
+plot(Taxa_Ind_plot)
+ggsave("figures/G_nGB.jpg")
+
+# Acoustic_Category - G_GB
+# Acoustic_Category - F
+# Acoustic_Category - FGB
+# Acoustic_Category - FnGB
+# Acoustic_Category - Cephalopod
+# Acoustic_Category - Crustaceans
+# Acoustic_Category - other
+
+unique(ccomp_Acoustic_Category$Acoustic_Category)
+``` 
+
 
 ```{r select individual Gelatinous Active}
 #Gelatinous_Active
@@ -745,10 +855,10 @@ Taxa_Ind_plot <- ggplot(TW_std_ID_Taxa,
   theme_bw()
 plot(Taxa_Ind_plot)
 ggsave("figures/Gelatinous_Active.jpg")
-
+``` 
 
 #Tunicates
-
+```{r tunicates}
 TW_std_ID_Taxa <- ccomp_Taxa_Groups %>% 
   group_by(Site, daylight,Depth_Stratum,Deployment) %>% 
   filter(Taxa_Groups=="Tunicates") %>% 
@@ -974,23 +1084,25 @@ ggsave("figures/Cyclothone.jpg")
 #Lamancytus australis
 TW_std_Species <- ccomp_6_SumShot %>% 
   group_by(Site, daylight,Depth_Stratum) %>% 
-  filter(Taxa_updated=="Lampanyctus australis") %>% 
+  filter(Acoustic_Category =="FSB") %>% 
   filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") %>% 
-  summarise(nos = sum(nos)) %>% 
-  mutate(nos = ifelse(daylight %in% "Night", nos*-1, nos)) 
+  # summarise(nos = sum(nos)) %>% 
+  # mutate(nos = ifelse(daylight %in% "Night", nos*-1, nos)) 
+  summarise(TWgm3 = sum(Weight_Std_gm3)) %>% 
+  mutate(TWgm3 = ifelse(daylight %in% "Night", TWgm3*-1, TWgm3)) %>% 
+  group_by(Site, daylight,Depth_Stratum) %>% 
+  summarise(TWgm3_avg = mean(TWgm3),n(),sd=sd(TWgm3,na.rm = TRUE))
  
  # group_by(Site, daylight,Depth_Stratum) %>% 
  # summarise(nos = mean(nos),n(),sd=sd(nos,na.rm = TRUE))
 
 TW_std_Species$Site <- factor(as.factor(TW_std_Species$Site), levels = c("SOTS","55S","58S"))
 TW_std_Species$Depth_Stratum <- factor(as.factor(TW_std_Species$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
-
-
 Species_plot <- ggplot(TW_std_Species,
                      mapping = aes(x = as.factor(Depth_Stratum),
-                                   y = nos, fill = daylight))+
-    #geom_errorbar(aes(ymin = nos - sd, ymax= nos + sd, colour = factor(daylight)),
-               # width = 0.3, position = position_dodge(0)) +
+                                   y = TWgm3_avg, fill = daylight))+
+    geom_errorbar(aes(ymin = TWgm3_avg - sd, ymax= TWgm3_avg + sd, colour = factor(daylight)),
+                width = 0.3, position = position_dodge(0)) +
   #geom_errorbar(aes(ymin=y, ymax=y_upper.error), colour="blue", width = 0.1) +
   #geom_errorbar(aes(ymin=y_lower.error, ymax=y), colour="red", width = 0.1) +
   xlab("Depth Stratum")+
@@ -1002,6 +1114,23 @@ Species_plot <- ggplot(TW_std_Species,
   coord_flip()+
   facet_grid(~Site)+
   theme_bw()
+
+# Species_plot <- ggplot(TW_std_Species,
+#                      mapping = aes(x = as.factor(Depth_Stratum),
+#                                    y = nos, fill = daylight))+
+#     #geom_errorbar(aes(ymin = nos - sd, ymax= nos + sd, colour = factor(daylight)),
+#                # width = 0.3, position = position_dodge(0)) +
+#   #geom_errorbar(aes(ymin=y, ymax=y_upper.error), colour="blue", width = 0.1) +
+#   #geom_errorbar(aes(ymin=y_lower.error, ymax=y), colour="red", width = 0.1) +
+#   xlab("Depth Stratum")+
+#   ylab("Standardised wet weight (g/m^3)")+
+#   #scale_x_discrete(limits = c(-0.9,0.9))+
+#   scale_colour_manual("daylight",values=c("light blue","dark blue"))+
+#   scale_fill_manual("daylight",values=c("light blue","dark blue"))+
+#   geom_col()+
+#   coord_flip()+
+#   facet_grid(~Site)+
+#   theme_bw()
 
 plot(Species_plot)
 ggsave("figures/Lampanyctus .jpg")
