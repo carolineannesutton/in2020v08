@@ -478,7 +478,25 @@ ccomp_6_SumShot <- ccomp_5_summary %>%
   #making sure dupicate row are ignored
   distinct(ID,.keep_all = TRUE)
 
-# Dups <-ccomp_6_SumShot[duplicated(ccomp_6_SumShot$ID), ]
+
+  
+tally <- Shot_2 %>% 
+  mutate(Depth_Stratum = ifelse(Depth_Stratum == "Epi" | 
+                                  Depth_Stratum =="Lmeso" | 
+                                  Depth_Stratum == "Meso"|
+                                  Depth_Stratum == "Integrated",Depth_Stratum,"Targetted" )) %>% 
+  group_by(Site,daylight, Depth_Stratum) %>% 
+  summarise(n=n()) %>% 
+#tally_1 <- tally %>% 
+  spread(daylight,n)
+
+  
+
+  
+  
+ 
+  
+ 
 
 write.csv(ccomp_6_SumShot,"Results/IN2020_V08_CatchComp.csv")
 ```
@@ -489,6 +507,12 @@ write.csv(ccomp_6_SumShot,"Results/IN2020_V08_CatchComp.csv")
 ccomp_6_SumShot_Micro <- ccomp_6_SumShot %>% 
   filter(AvgL_mm >=20) 
   #filter(ACat != "Tunicates" & ACat != "Medusa") 
+write.csv(ccomp_6_SumShot_Micro,"Results/IN2020_V08_CatchComp_Micro20mm.csv")
+
+ccomp_6_SumShot_Micro <- ccomp_6_SumShot %>% 
+  filter(AvgL_mm >=15) 
+  #filter(ACat != "Tunicates" & ACat != "Medusa") 
+write.csv(ccomp_6_SumShot_Micro,"Results/IN2020_V08_CatchComp_Micro15mm.csv")
 ``` 
 
 ```{}
@@ -552,27 +576,27 @@ TW_std_bigger20mm <- ccomp_6_SumShot %>%
 
 # Create Plot
 
-# TW_std$Depth_Stratum <- factor(as.factor(TW_std$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
-# TW_std$Site <- factor(as.factor(TW_std$Site), levels = c("SOTS","55S","58S"))
-# TW_std_1 <- TW_std %>% 
-#   group_by(Site,daylight,Depth_Stratum) %>% 
-#  #mutate(TW_std = TW_std*1000) %>% 
-#   summarise(n(),TW_std = round(mean(TWgm3,na.rm = TRUE),digits = 2),
-#             sd = round(sd(TWgm3,na.rm = TRUE),digits = 2)
-#             )
-# tw<-ggplot(TW_std_1,
-#        mapping = aes(x = as.factor(Depth_Stratum), 
-#                      y = TW_std, fill = daylight))+
-#   scale_fill_brewer()+
-#   geom_errorbar(aes(ymin = TW_std - sd, ymax= TW_std + sd),
-#                 width = 0.4, position = position_dodge(0)) +
-# geom_col()+
-#   coord_flip()+
-#   facet_grid(~Site)+
-#   theme_bw()
-# tw
-#   
-# ggsave(tw,filename = "Results/tw.jpg")
+TW_std$Depth_Stratum <- factor(as.factor(TW_std$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
+TW_std$Site <- factor(as.factor(TW_std$Site), levels = c("SOTS","55S","58S"))
+TW_std_1 <- TW_std %>%
+  group_by(Site,daylight,Depth_Stratum) %>%
+ #mutate(TW_std = TW_std*1000) %>%
+  summarise(n(),TW_std = round(mean(TWgm3,na.rm = TRUE),digits = 2),
+            sd = round(sd(TWgm3,na.rm = TRUE),digits = 2)
+            )
+tw<-ggplot(TW_std_1,
+       mapping = aes(x = as.factor(Depth_Stratum),
+                     y = TW_std, fill = daylight))+
+  scale_fill_brewer()+
+  geom_errorbar(aes(ymin = TW_std - sd, ymax= TW_std + sd),
+                width = 0.4, position = position_dodge(0)) +
+geom_col()+
+  coord_flip()+
+  facet_grid(~Site)+
+  theme_bw()
+tw
+
+ggsave(tw,filename = "Results/tw.jpg")
 ```
 
 ```{r total weight summary}
@@ -642,9 +666,17 @@ ccomp_Ind_Taxa_M <-ccomp_6_SumShot_Micro %>%
 #summarise by Taxa_updated,depth and day 
 ccomp_Ind_Taxa_M_noDep <- ccomp_Ind_Taxa_M %>% 
   group_by(Site,daylight,Depth_Stratum, Taxa_updated) %>% 
-    summarise(Nos = sum(Nos), Wtgm3 = sum(Weight_g),Anosm3 = sum(Abd_nosm3),Wtgm3_avg = mean(Weight_gm3),Anosm3_avg = mean(Abd_nosm3))
+    summarise(Nos = sum(Nos), Wt = sum(Weight_g),Anosm3 = sum(Abd_nosm3),Wtgm3_avg = mean(Weight_gm3),Anosm3_avg = mean(Abd_nosm3))
+```
 
 
+
+
+#Migration Data
+```{r}
+Migration <- ccomp_Ind_Taxa_M_noDep %>%
+  select(Site, daylight,Depth_Stratum,Taxa_updated,Nos) %>% 
+  spread(daylight,Nos)
 ```
 
 PROPORTION Taxa
