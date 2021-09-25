@@ -1,0 +1,50 @@
+---
+title: "Summary data"
+author: "sutton"
+date: "24/09/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(plyr)
+library(Rmisc)
+library(lattice)
+library(tidyr)
+library(tidyverse)
+library(gridExtra)
+library(dplyr)
+library(knitr)
+library(geosphere)
+library(janitor)
+
+
+SOLACE_Micro <- read_csv("Results/IN2020_V08_CatchComp_Micro20mm.csv")
+```
+
+
+```{r cummulative biomass}
+
+SOLACE_Micro <- SOLACE_Micro %>% 
+  filter(Site == "55S" | Site == "58S" |Site == "SOTS") %>% 
+  filter(Depth_Stratum =="Meso" | Depth_Stratum == "Epi"|Depth_Stratum=="Lmeso") %>% 
+  drop_na(Site)
+
+distinct(SOLACE_Micro,Depth_Stratum)
+
+SOLACE_Micro_1 <- SOLACE_Micro %>% 
+  select(Site,Acoustic_Category,Taxa_updated,weight_g) %>% 
+  group_by(Site,Taxa_updated) %>% 
+  summarise(weight = sum(weight_g)) %>% 
+  arrange(Site,-weight) %>% 
+  #mutate(cumsum = cumsum(weight)) %>% 
+  #mutate(cumpercent = cumsum/sum(weight)) %>% 
+  mutate(percent =round(weight/sum(weight),2)) 
+```
+
+```{r}
+
+
+```
+
+

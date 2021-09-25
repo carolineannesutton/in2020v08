@@ -1,0 +1,114 @@
+---
+title: "IN2020_V08_ShotData"
+output: html_document
+---
+
+#load packages
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(plyr)
+library(Rmisc)
+library(lattice)
+library(tidyr)
+library(tidyverse)
+library(gridExtra)
+library(dplyr)
+library(knitr)
+library(geosphere)
+library(janitor)
+
+# read in data
+
+Shot <- read_csv("data/IN2020_V08_ShotData.csv")
+deployments <- read_csv("data/in2020_v08_deployments.csv")
+
+```
+# Shot Data
+
+## Volume Filtered Calculation
+RMT 16 net area = 16m^2
+speed of vessel on average  = 1kt *** but check with Grafana
+time of tow = mins
+conversion of kts to kph = kts * 1.852 (kph)
+conversion of kph to mpm= kph * 16.667 (mpm)
+volume filtered (m^3)= distance (m)* net mouth area (m^2) = ((speed (m/min) * time towed (min)) * net area (m^2))
+
+```{r volume filtered calculation}
+Shot_1 <- Shot %>% 
+  filter(Category== "Start" | Category == "Stop") %>% 
+  filter("Op Number" != '26') %>% 
+   select(-Date,-Depth,-'Sea Water Temperature', -Author, - 'Op owner', date = 'Real Date')%>%
+  
+  #correct entry errors
+  # Op  29 start date is incorrect "2020-12-28 15:44:00		 update to 2020-12-26 15:44:00	
+  mutate(date = ifelse(date == "2020-12-28 15:44:00","2020-12-26 15:44:00",date)) %>% 
+  
+   
+  #change Latitude to Decimal degrees
+  mutate(Lat = Latitude) %>% 
+  separate(Lat, c("deg","min","dir"),sep = " ") %>% 
+  mutate(deg = as.numeric(deg)) %>% 
+  mutate(dir = as.numeric(dir)) %>% 
+  mutate(lat_decdeg = -deg + dir/60) %>% 
+  #mutate(Date1 = date) %>% 
+  #separate(date, c("Date","Time"), sep = " ") %>% 
+  mutate(DateR = date) %>% 
+  mutate(date = as.POSIXct(date, format = "%d/%m/%Y %H:%M")) %>% 
+  
+#change longitude to decimal degrees
+mutate(Long = Longitude) %>% 
+  separate(Long, c("ldeg","lmin","ldir"),sep = " ") %>% 
+  mutate(ldeg = as.numeric(ldeg)) %>% 
+  mutate(ldir = as.numeric(ldir)) %>% 
+  mutate(long_decdeg = -ldeg + ldir/60) %>% 
+  select(-deg,-min,-dir,-ldeg,-lmin,-ldir) %>%
+  
+  #fix up the inconsistencies in site
+  separate(Location,c("Site", "S","Cycle","Repeat")) %>% 
+  mutate(Site = ifelse(Site =='55',"55S",
+                       ifelse(Site == '58', "58S",Site))) %>% 
+  arrange(lat_decdeg)
+ 
+# Spitting the data into two tables one for start and one for stop
+start <- Shot_1 %>% 
+  filter(Category == "Start") 
+stop <- Shot_1 %>% 
+  filter(Category =="Stop") %>% 
+  select('Op number', lat_decdeg,long_decdeg,Site,date,DateR) 
+##Volume Filtered by calculating distance traveled by Ships Speed and tow time
+# combining data to have start and stop data for time and position in one row. To calculate distance and time differences
+Shot_2 <- start %>%
+  left_join(stop, by = 'Op number', suffix= c("_start", "_stop")) %>%
+  select(-Category, Site=Site_start, Net_Name = Type, Depth_Stratum = Subject,
+         Deployment = 'Op number') %>% 
+  separate(Depth_Stratum,c("Depth_Stratum","daylight"),sep = " ") %>% 
+  mutate(towtime = difftime(date_stop,date_start, units = "mins")) %>% 
+  mutate(Speed_mpm = 1*1.852*16.667) %>% 
+  mutate(distance_m_byspeed = Speed_mpm * towtime) %>%
+  mutate(distance_m_byspeed=as.numeric(distance_m_byspeed)) %>% 
+  mutate(VolumeFiltered_m3_speed = distance_m_byspeed * 16) %>% 
+  mutate(towtime = difftime(date_stop,date_start, units = "mins")) %>% 
+  filter(as.factor(Deployment) != '26') %>% 
+  select(-"S", -"Cycle",-"Repeat") %>% 
+  arrange()
+write.csv(Shot_2,"Results/IN2020_V08_Shot_startStop.csv")
+ 
+Shot_3 <- Shot_2 %>% 
+  select(Site = Site, daylight, Deployment,Depth_Stratum) 
+  
+  
+tally <- Shot_2 %>% 
+  #filter(Depth_Stratum == "Epi" | Depth_Stratum =="Lmeso" | Depth_Stratum == "Meso") %>% 
+  group_by(Site,daylight, Depth_Stratum) %>% 
+  summarise(n=n())
+tally_1 <- tally %>% 
+  spread(daylight,n)
+  
+#CR_Date$hours <- with(CR_Date, difftime(pos2,pos1,units="hours") )
+#CR_Date
+ 
+Shottest <- Shot_1 %>% 
+ mutate(date = ifelse(date == "2020-12-28 15:44:00","2020-12-26 15:44:00",date))
+                      
+#mutate(Taxa_updated = ifelse(Taxa_updated =="kriffichthys andersoni","Krefftichthys anderssoni",Taxa_updated)) 
+```
