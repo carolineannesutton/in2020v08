@@ -3,6 +3,7 @@ title: "Summary data"
 author: "sutton"
 date: "24/09/2021"
 output: html_document
+
 ---
 
 ```{r setup, include=FALSE}
@@ -19,20 +20,150 @@ library(geosphere)
 library(janitor)
 
 
-SOLACE_Micro <- read_csv("Results/IN2020_V08_CatchComp_Micro20mm.csv")
+SOLACE_M20 <- read_csv("Results/IN2020_V08_CatchComp_Micro20mm.csv")
+SOLACE_M15 <- read_csv("Results/IN2020_V08_CatchComp_Micro15mm.csv")
+SOLACE <- read_csv("Results/IN2020_V08_CatchComp.csv")
 ```
 
 
-```{r cummulative biomass}
+#Total Summarised Standardised catch
 
-SOLACE_Micro <- SOLACE_Micro %>% 
+
+## Summaries for Micronekton >20mm, using Volume Filtered calculated by ship's speed
+```{r total summarised std weight}
+# Total standardised weight
+TW20_sp <- SOLACE_M20 %>% 
+  group_by(Site, daylight,Depth_Stratum,Deployment) %>% 
+  filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") %>% 
+  #mutate(Weight_Std_gm3 = ifelse(daylight %in% "Night", Weight_Std_gm3*-1, weight_g)) %>% 
+  summarise(TWgm3 = sum(Weight_Std_gm3_sp)) %>% 
+  mutate(TWgm3 = ifelse(daylight %in% "Night", TWgm3*-1, TWgm3)) 
+
+## TW by Micro_all and VF by gps
+# TW_std_gps <- SOLACE %>% 
+#   group_by(Site, daylight,Depth_Stratum,Deployment) %>% 
+#   filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") %>% 
+#   #mutate(Weight_Std_gm3 = ifelse(daylight %in% "Night", Weight_Std_gm3*-1, weight_g)) %>% 
+#   summarise(TWgm3 = sum(Weight_Std_gm3_gps)) %>% 
+#   mutate(TWgm3 = ifelse(daylight %in% "Night", TWgm3*-1, TWgm3)) 
+# 
+# unique(SOLACE$ACat)
+
+# TW_std_bigger20mm <- SOLACE %>% 
+#   filter(AvgL_mm >= 20) %>% 
+#   group_by(Site, daylight,Depth_Stratum,Deployment) %>% 
+#   filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") %>% 
+#   #mutate(Weight_Std_gm3 = ifelse(daylight %in% "Night", Weight_Std_gm3*-1, weight_g)) %>% 
+#   summarise(TWgm3 = sum(Weight_Std_gm3_sp)) %>% 
+#   mutate(TWgm3 = ifelse(daylight %in% "Night", TWgm3*-1, TWgm3)) 
+
+# Create Plot
+# TW standardised with speed of net
+TW20_sp$Depth_Stratum <- factor(as.factor(TW20_sp$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
+TW20_sp$Site <- factor(as.factor(TW20_sp$Site), levels = c("SOTS","55S","58S"))
+TW20_sp_1 <- TW20_sp %>%
+  group_by(Site,daylight,Depth_Stratum) %>%
+ #mutate(TW_std = TW_std*1000) %>%
+  summarise(n(),TW20_sp = round(mean(TWgm3,na.rm = TRUE),digits = 2),
+            sd = round(sd(TWgm3,na.rm = TRUE),digits = 2)
+            )
+TW_sp <-ggplot(TW20_sp_1,
+       mapping = aes(x = as.factor(Depth_Stratum),
+                     y = TW20_sp, fill = daylight))+
+  scale_fill_brewer()+
+  geom_errorbar(aes(ymin = TW20_sp - sd, ymax= TW20_sp + sd),
+                width = 0.4, position = position_dodge(0)) +
+geom_col()+
+  coord_flip()+
+  facet_grid(~Site)+
+  theme_bw()
+TW_sp
+ggsave(TW_sp,filename = "Results/tw_speed_MBigger.jpg")
+
+
+
+# # TW standardised with gps of net
+# TW_std_gps$Depth_Stratum <- factor(as.factor(TW_std_gps$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
+# TW_std_gps$Site <- factor(as.factor(TW_std_gps$Site), levels = c("SOTS","55S","58S"))
+# TW_std_gps_1 <- TW_std_gps %>%
+#   group_by(Site,daylight,Depth_Stratum) %>%
+#  #mutate(TW_std = TW_std*1000) %>%
+#   summarise(n(),TW_std_gps = round(mean(TWgm3,na.rm = TRUE),digits = 2),
+#             sd = round(sd(TWgm3,na.rm = TRUE),digits = 2)
+#             )
+# TWgps<-ggplot(TW_std_gps_1,
+#        mapping = aes(x = as.factor(Depth_Stratum),
+#                      y = TW_std_gps, fill = daylight))+
+#   scale_fill_brewer()+
+#   geom_errorbar(aes(ymin = TW_std_gps - sd, ymax= TW_std_gps + sd),
+#                 width = 0.4, position = position_dodge(0)) +
+# geom_col()+
+#   coord_flip()+
+#   facet_grid(~Site)+
+#   theme_bw()
+# 
+# TWgps 
+# ggsave(TWgps,filename = "Results/tw_gps.jpg")
+```
+
+# Total Weight Summary using SummarySE
+```{r total weight summary}
+# Summary Using SummarySE 
+## still based on "ccomp_6_SumShot"
+TW20_sp_summary <- summarySE(TW20_sp, measurevar = "TWgm3", groupvars = c("Site", "daylight", "Depth_Stratum"))
+TW20_sp_plot <- ggplot(TW20_sp_summary,
+                     mapping = aes(x = as.factor(Depth_Stratum),
+                                   y = TWgm3, fill = daylight))+
+  #scale_fill_brewer()+
+  geom_errorbar(aes(ymin = TWgm3 - sd, ymax= TWgm3 + sd,colour = daylight),
+                width = 0.4, position = position_dodge(0)) +
+  xlab("Depth Stratum")+
+  ylab("Standardised wet weight (g/m^3)")+
+  #scale_x_discrete(limits = c(-0.9,0.9))+
+  scale_fill_manual(values=c("light blue","dark blue"))+
+  scale_colour_manual(values =c("light blue", "dark blue"))+
+  geom_col()+
+  coord_flip()+
+  facet_grid(~Site)+
+  theme_bw()
+TW20_sp_plot
+plot(TW20_sp_plot)
+ggsave("figures/TW20_sp.jpg")
+
+
+# TW_summary_gps <- summarySE(TW_std_gps, measurevar = "TWgm3", groupvars = c("Site", "daylight", "Depth_Stratum"))
+# TWSum_gps_plot <- ggplot(TW_summary_gps,
+#                      mapping = aes(x = as.factor(Depth_Stratum),
+#                                    y = TWgm3, fill = daylight))+
+#   #scale_fill_brewer()+
+#   geom_errorbar(aes(ymin = TWgm3 - sd, ymax= TWgm3 + sd,colour = daylight),
+#                 width = 0.4, position = position_dodge(0)) +
+#   xlab("Depth Stratum")+
+#   ylab("Standardised wet weight (g/m^3)")+
+#   #scale_x_discrete(limits = c(-0.9,0.9))+
+#   scale_fill_manual(values=c("light blue","dark blue"))+
+#   scale_colour_manual(values =c("light blue", "dark blue"))+
+#   geom_col()+
+#   coord_flip()+
+#   facet_grid(~Site)+
+#   theme_bw()
+# TWSum_gps_plot
+# plot(TWSum_gps_plot)
+# ggsave("figures/TWeight_gps_gm3.jpg")
+```
+
+
+# Percent Contribution
+```{r percent contribution biomass by site}
+
+# include only the replicated sites
+SOLACE_M20_1 <- SOLACE_M20 %>% 
   filter(Site == "55S" | Site == "58S" |Site == "SOTS") %>% 
-  filter(Depth_Stratum =="Meso" | Depth_Stratum == "Epi"|Depth_Stratum=="Lmeso") %>% 
-  drop_na(Site)
+  filter(Depth_Stratum =="Meso" | Depth_Stratum == "Epi"|Depth_Stratum=="Lmeso") %>%   drop_na(Site)
 
-distinct(SOLACE_Micro,Depth_Stratum)
+distinct(SOLACE_M20,Depth_Stratum)
 
-SOLACE_Micro_1 <- SOLACE_Micro %>% 
+SOLACE_M20_1 <- SOLACE_M20 %>% 
   select(Site,Acoustic_Category,Taxa_updated,weight_g) %>% 
   group_by(Site,Taxa_updated) %>% 
   summarise(weight = sum(weight_g)) %>% 
