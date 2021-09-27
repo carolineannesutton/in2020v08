@@ -95,15 +95,20 @@ write.csv(Shot_2,"Results/IN2020_V08_Shot_startStop.csv")
  
 Shot_3 <- Shot_2 %>% 
   select(Site = Site, daylight, Deployment,Depth_Stratum) 
-  
+```
+
+```{r RMT deployment tally}
   
 tally <- Shot_2 %>% 
-  #filter(Depth_Stratum == "Epi" | Depth_Stratum =="Lmeso" | Depth_Stratum == "Meso") %>% 
+  filter(Depth_Stratum == "Epi" | Depth_Stratum =="Lmeso" | Depth_Stratum == "Meso") %>% 
   group_by(Site,daylight, Depth_Stratum) %>% 
   summarise(n=n())
 tally_1 <- tally %>% 
   spread(daylight,n)
-  
+
+write.csv(tally_1,"Results/IN2020_V08_ShotTally.csv")
+```
+
 #CR_Date$hours <- with(CR_Date, difftime(pos2,pos1,units="hours") )
 #CR_Date
  
