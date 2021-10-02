@@ -531,8 +531,7 @@ ccomp_6_SumShot_PLAOS <- ccomp_6_SumShot %>%
   mutate(Taxa_PLAOS = ifelse(ACat == "Tunicates", "Salp",Taxa_PLAOS)) %>% 
   mutate(Taxa_PLAOS = ifelse(Taxa_updated == "Pyrosoma atlanticum", "Pyrosome",Taxa_PLAOS))
 
-  
-  ccomp_6_SumShot_PLAOS <- ccomp_6_SumShot_PLAOS %>% 
+ccomp_6_SumShot_PLAOS <- ccomp_6_SumShot_PLAOS %>% 
   ungroup()
 
 
@@ -545,9 +544,14 @@ taxagroups <- ccomp_6_SumShot_PLAOS %>%
 ccomp_6_SumShot_PLAOS_20mm_design <- ccomp_6_SumShot_PLAOS %>% 
   filter(ACat == "Siph_physonect" |  AvgL_mm >= 20) %>% 
    filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso")
+```
 
-write.csv(ccomp_6_SumShot_PLAOS_20mm_design,"Results/IN2020_V08_CatchComp1.csv")
+
+```{r write catch comp}
+write.csv(ccomp_6_SumShot_PLAOS_20mm_design,"Results/IN2020_V08_CatchComp.csv")
 write.csv(ccomp_6_SumShot_PLAOS, "Results/IN2020_V08_CatchComp_allsites.csv")
+
+
 
 ```
 
@@ -1439,7 +1443,7 @@ geom_col()+
   facet_grid(~Site1)+
   theme_bw()
                 
-  plot(biomass)
+plot(biomass)
 ggsave(filename = "Results/biomass.emf")
 ggsave(filename = "Results/fbiomass.jpg")
 ```
