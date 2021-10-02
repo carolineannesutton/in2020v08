@@ -236,6 +236,8 @@ select(Acoustic_Category,Taxa_Groups,ACat) %>%
   
 ```
 
+
+
 #filter data to exclude Subsamples, data where the Acc has been split, and Gut samples
 ```{r filter Samples}
 #list sample types
@@ -418,6 +420,8 @@ Dups <-length_2[duplicated(length_2$ID), ]
    filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") %>%     
   filter(`Length _mm`< 5500)
   
+
+  
 write.csv(length_2_sites,"Results/IN2020_V08_Lengths.csv")
 
 # ggplot(length_2_sites, aes(y = Depth_Stratum, x = `Length _mm`)) +
@@ -514,9 +518,37 @@ tally <- Shot_withgps %>%
   summarise(n=n()) %>% 
 #tally_1 <- tally %>% 
   spread(daylight,n)
+```
+worms
+# Create Taxa_PLAOS"
+```{r Taxa_PLAOS}
+
+ccomp_6_SumShot_PLAOS <- ccomp_6_SumShot %>%
+  mutate(Taxa_PLAOS = 
+           ifelse(ACat %in% c("Amphipods","Copepod","Ostracod","Isopods","Gnathaphausia"), "Crustacean",
+           ifelse(ACat %in% c("worms","pelagic gastropod","Pteropod","Gymnosome"), "Other",
+           ACat))) %>% 
+  mutate(Taxa_PLAOS = ifelse(ACat == "Tunicates", "Salp",Taxa_PLAOS)) %>% 
+  mutate(Taxa_PLAOS = ifelse(Taxa_updated == "Pyrosoma atlanticum", "Pyrosome",Taxa_PLAOS))
+
+  
+  ccomp_6_SumShot_PLAOS <- ccomp_6_SumShot_PLAOS %>% 
+  ungroup()
 
 
-write.csv(ccomp_6_SumShot,"Results/IN2020_V08_CatchComp.csv")
+taxagroups <- ccomp_6_SumShot_PLAOS %>% 
+  select(Acoustic_Category,Taxa_PLAOS) %>% 
+  distinct(Acoustic_Category,Taxa_PLAOS)
+
+
+#filter out small <20 mm but don't exlude the physonects
+ccomp_6_SumShot_PLAOS_20mm_design <- ccomp_6_SumShot_PLAOS %>% 
+  filter(ACat == "Siph_physonect" |  AvgL_mm >= 20) %>% 
+   filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso")
+
+write.csv(ccomp_6_SumShot_PLAOS_20mm_design,"Results/IN2020_V08_CatchComp1.csv")
+write.csv(ccomp_6_SumShot_PLAOS, "Results/IN2020_V08_CatchComp_allsites.csv")
+
 ```
 
 # Filtered for Micronekton 
