@@ -25,6 +25,7 @@ Shot_withgps <- read_csv("Results/IN2020_V08_Shot_startStop_gps.csv")
 deployments <- read_csv("data/in2020_v08_deployments.csv")
 MicroDB <- read_csv("data/Micronekton_CSIRO_Data_1992to2018.csv")
 ACatDATA <- read_csv("data/MicroDB_Acat_210916.csv")
+Bladder_update <- read_csv("Results/Solace_Species with Bladder status3.csv")
 ```
 
 
@@ -46,7 +47,7 @@ rename columns and taxa
 
 # change to uniform names for 'deployment' and 'Accession number' and match species names in length data
 ccomp_2 <- ccomp_1 %>% 
-  rename(Deployment = 'Operation No', Acc = 'Accession No', Sample_Type = `Sample Type`) %>% 
+ dplyr::rename(Deployment = `Operation No`, Acc = `Accession No`, Sample_Type = `Sample Type`) %>%
   select(Voyage, Deployment,Acc,Acc_ed,Sample_Type,Taxa,CAAB, Taxa_ed,CAAB_ed, weight_g =`Weight (g)`, Count,Comments,Storage_temp =`Storage temperature`,Preservative,`Container name`,Taxa_updated,CAAB_updated) %>% 
   
   # fix up Taxa_updated field field
@@ -168,20 +169,37 @@ distinct(ACatDATA,ACat)
 ACatDATA_bladder <- ACatDATA %>% 
   filter(ACat == "F" | ACat == "FGB" | ACat =="FnGB")
 
+  distinct(ACatDATA_bladder,ACat)
+
+
+# including updated Fish bladder data
+  Bladder_update <- Bladder_update %>% 
+    select(Taxa_updated, bladder_research)
+    
+
+
 ccomp_3_ACATDB <- left_join(ccomp_3, ACatDATA_bladder, by = c("Taxa_updated"= "Species_Name")) %>% 
   mutate(ACat = ifelse(is.na(ACat.y),ACat.x,ACat.y)) %>% 
   mutate(ACat = ifelse(ACat == "Fish", "F", ACat)) %>% 
   mutate(ACat = ifelse(ACat == "Fish_GB", "FGB", ACat)) %>% 
-  mutate(ACat = ifelse(ACat == "FSB", "FGB", ACat))
+  mutate(ACat = ifelse(ACat == "FSB", "FGB", ACat)) %>% 
+  select(-ACat.y, - ACat.x)
+  
 
-distinct(ccomp_3_ACATDB,ACat)
+# adding updated fish bladder data
+  #left_join(Bladder_update, by = c("Taxa_updated" = "Taxa_updated")) 
+  ccomp_3_ACATDB1 <-  left_join(ccomp_3_ACATDB, Bladder_update, by = "Taxa_updated") %>% 
+  mutate(ACat = ifelse(is.na(bladder_research), ACat,bladder_research))
+
+distinct(ccomp_3_ACATDB1,ACat)
+x <-filter(ccomp_3_ACATDB1, ACat =="F")
 ```
 
 
 
 #create higher grouping "Taxa_Groups"
 ```{r creating Taxa_Groups}
-ccomp_3_ACATDB_TGroups <- ccomp_3_ACATDB %>% 
+ccomp_3_ACATDB_TGroups <- ccomp_3_ACATDB1 %>% 
   mutate(Taxa_Groups = 
            ifelse(ACat %in% c("Siphonophore","Ctenophore","Medusa"), "Gelatinous_Active",
            ifelse(ACat%in%c("Crustacean","Prawn","Krill","Amphipods","Gnathaphausia", "Isopods",
@@ -396,7 +414,7 @@ ccomp_4_forlengthjoin <- select(ccomp_4, Deployment, Acc, Acc_ed,Taxa_updated, C
 
 length_1 <- length %>% 
   rowid_to_column("ID") %>% 
-  rename(Acc = 'Acc #') %>% 
+ dplyr::rename(Acc = 'Acc #') %>% 
   select(-Voyage,-Net_Name)
 
 # joining length data to the catch comp and site data for graphing
