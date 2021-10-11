@@ -20,8 +20,6 @@ library(geosphere)
 library(janitor)
 
 
-SOLACE_M20 <- read_csv("Results/IN2020_V08_CatchComp_Micro20mm.csv")
-SOLACE_M15 <- read_csv("Results/IN2020_V08_CatchComp_Micro15mm.csv")
 SOLACE <- read_csv("Results/IN2020_V08_CatchComp.csv")
 ```
 
@@ -32,28 +30,29 @@ SOLACE <- read_csv("Results/IN2020_V08_CatchComp.csv")
 ## Summaries for Micronekton >20mm, using Volume Filtered calculated by ship's speed
 ```{r total summarised std weight}
 
-# Table of Taxa Groupings
-SOLACE <- SOLACE %>% 
-  mutate(ACat = ifelse(Taxa_updated == "Pyrosoma atlanticum", "Pyrosome",ACat)) %>% 
-  mutate(ACat = ifelse(ACat == "Tunicates", "Salp",ACat))
+
 
 Taxa_Groupings <- SOLACE %>% 
-select(Acoustic_Category,Taxa_Groups,ACat) %>% 
+select(Acoustic_Category,Taxa_Groups,ACat,Taxa_PLAOS) %>% 
   arrange(Acoustic_Category) %>% 
-    distinct(Acoustic_Category,ACat,Taxa_Groups)
+    distinct(Acoustic_Category,ACat,Taxa_Groups,Taxa_PLAOS)
 
-S_M20 <- SOLACE %>% 
-  filter(ACat == "Siph_physonect" |  AvgL_mm >= 20)
-# 
-filter(S_M20, ACat == "Tunicates")
-SOLACE <- SOLACE %>% 
-  mutate(ACat = ifelse(Taxa_updated == "Pyrosoma atlanticum", "Pyrosome","Salp"))
-filter(S_M20, Taxa_Groups == "Tunicates")
 ```
+# Species List
+
+```{r species list}
+  
+SOLACE_SpeciesList <- SOLACE %>% 
+  select(Acoustic_Category,Taxa_Groups,ACat,CAAB_updated,Taxa_updated) %>% 
+  distinct(Taxa_updated,.keep_all = TRUE) 
+
+write.csv(SOLACE_SpeciesList,"Results/Solace_SpeciesList.csv")
+```
+
 
 ```{r summarising data}
 # Total standardised weight
-TW20_sp <- S_M20 %>% 
+SOLACE_TW <- SOLACE %>% 
   group_by(Site, daylight,Depth_Stratum,Deployment) %>% 
   filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") %>% 
   #mutate(Weight_Std_gm3 = ifelse(daylight %in% "Night", Weight_Std_gm3*-1, weight_g)) %>% 
@@ -62,28 +61,28 @@ TW20_sp <- S_M20 %>%
 
 
 # summarise by Acoustic_Category for each deployment
-S_M20_Acoustic_Category <-S_M20 %>% 
+SOLACE_Acoustic_Category <-SOLACE %>% 
   group_by(Site,daylight,Depth_Stratum,Deployment, Acoustic_Category) %>% 
   summarise(Nos = sum(nos), Weight_g = sum(weight_g),
-            Weight_gm3 = sum(Weight_Std_gm3_gps),Abd_nosm3 =sum(Abd_Std_nosm3_gps))
+            Weight_gm3 = sum(Weight_Std_gm3_sp),Abd_nosm3 =sum(Abd_Std_nosm3_sp))
 
 # summarise by ACat for each deployment
-S_M20_ACAt <-S_M20 %>% 
-  group_by(Site,daylight,Depth_Stratum,Deployment, ACat) %>% 
+SOLACE_Taxa_PLAOS <-SOLACE %>% 
+  group_by(Site,daylight,Depth_Stratum,Deployment, Taxa_PLAOS) %>% 
   summarise(Nos = sum(nos), Weight_g = sum(weight_g),
-            Weight_gm3 = sum(Weight_Std_gm3_gps),Abd_nosm3 =sum(Abd_Std_nosm3_gps))
+            Weight_gm3 = sum(Weight_Std_gm3_sp),Abd_nosm3 =sum(Abd_Std_nosm3_sp))
 
 # summarise by Taxa_Groups for each deployment
-S_M20_Taxa_Groups <-S_M20 %>% 
+SOLACE_M20_Taxa_Groups <-SOLACE %>% 
   group_by(Site,daylight,Depth_Stratum,Deployment, Taxa_Groups) %>% 
   summarise(Nos = sum(nos), Weight_g = sum(weight_g),
-            Weight_gm3 = sum(Weight_Std_gm3_gps),Abd_nosm3 =sum(Abd_Std_nosm3_gps))
+            Weight_gm3 = sum(Weight_Std_gm3_sp),Abd_nosm3 =sum(Abd_Std_nosm3_sp))
 
 # summarise by Taxa_updated for each deployment
-S_M20_Taxa_updated <-S_M20 %>% 
+SOLACE_M20_Taxa_updated <-SOLACE %>% 
   group_by(Site,daylight,Depth_Stratum,Deployment, Taxa_updated) %>% 
   summarise(Nos = sum(nos), Weight_g = sum(weight_g),
-            Weight_gm3 = sum(Weight_Std_gm3_gps),Abd_nosm3 =sum(Abd_Std_nosm3_gps))
+            Weight_gm3 = sum(Weight_Std_gm3_sp),Abd_nosm3 =sum(Abd_Std_nosm3_sp))
 
 
 ## TW by Micro_all and VF by gps
@@ -207,14 +206,14 @@ ggsave("figures/Paper/TW20_sp.jpg")
 ```{r percent contribution biomass by site}
 
 # include only the replicated sites
-SOLACE_M20_1 <- S_M20 %>% 
+SOLACE_M20_1 <- SOLACE %>% 
   filter(Site == "55S" | Site == "58S" |Site == "SOTS") %>% 
   filter(Depth_Stratum =="Meso" | Depth_Stratum == "Epi"|Depth_Stratum=="Lmeso") %>%   drop_na(Site)
 
-distinct(SOLACE_M20,Depth_Stratum)
-distinct(SOLACE_M20_1,Depth_Stratum)
+distinct(SOLACE,Depth_Stratum)
+distinct(SOLACE,Depth_Stratum)
 
-SOLACE_M20_1 <- SOLACE_M20 %>% 
+SOLACE_1 <- SOLACE %>% 
   select(Site,Acoustic_Category,Taxa_updated,weight_g) %>% 
   group_by(Site,Taxa_updated) %>% 
   summarise(weight = sum(weight_g)) %>% 
@@ -223,9 +222,9 @@ SOLACE_M20_1 <- SOLACE_M20 %>%
   mutate(cumpercent = cumsum/sum(weight)) %>% 
   mutate(percent =round(weight/sum(weight),2)) 
 
-write.csv(SOLACE_M20_1,"figures/Paper/CumPercent.csv")
+write.csv(SOLACE_1,"figures/Paper/CumPercent.csv")
 # 
- S_M20 %>% filter(Acoustic_Category == "FnGB")
+ SOLACE %>% filter(Acoustic_Category == "FnGB")
 ```
 
 

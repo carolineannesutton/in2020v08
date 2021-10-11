@@ -566,7 +566,7 @@ TaxaSots <- ggplot(Taxa_TW %>%
   geom_bar(position = "fill", stat = "identity")+
   theme(legend.position = "none")+
   facet_grid(.~daylight)+
-  scale_fill_manual(values=c("purple","grey","orange","dark blue","dark green","light pink","light blue"))+
+  scale_fill_manual(values=c("purple","grey","orange","dark blue","dark green","light pink","light blue","yellow"))+
   theme(text = element_text(size = 9))+
   ylab("SOTS")+
   xlab("")
@@ -579,7 +579,7 @@ Taxa55 <- ggplot(Taxa_TW %>%
   geom_bar(position = "fill", stat = "identity")+
   theme(legend.position = "none")+
   facet_grid(.~daylight)+
-  scale_fill_manual(values=c("purple","grey","orange","dark blue","dark green","light pink","light blue"))+
+  scale_fill_manual(values=c("purple","grey","orange","dark blue","dark green","light pink","light blue","yellow"))+
    theme(text = element_text(size = 9))+
   ylab("55S")+
   xlab("")
