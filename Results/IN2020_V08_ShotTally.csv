@@ -1,0 +1,11 @@
+,Site,Depth_Stratum,Day,Night,Total
+1,55S,Epi,2,2,4
+3,55S,Meso,2,2,4
+2,55S,Lmeso,3,2,5
+4,58S,Epi,2,2,4
+6,58S,Meso,2,2,4
+5,58S,Lmeso,2,2,4
+7,SOTS,Epi,2,3,5
+9,SOTS,Meso,3,2,5
+8,SOTS,Lmeso,3,2,5
+,,total,21,19,40

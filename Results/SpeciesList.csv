@@ -1,0 +1,212 @@
+"","ACat","Taxa_updated","CAAB_updated"
+"1","Medusa","Calycopsis spp.",11039901
+"2","Medusa","Cuninidae - undifferentiated",11082000
+"3","Medusa","Solmissus marshalli",11082003
+"4","Medusa","Solmissus spp.",11082902
+"5","Medusa","Pegantha rubiginosa",11083001
+"6","Medusa","Pegantha spp.",11083901
+"7","Medusa","Halicreatidae - undifferentiated",11086000
+"8","Medusa","Halicreas minimum",11086002
+"9","Medusa","Rhopalonematidae - undifferentiated",11089000
+"10","Medusa","Rhopalonema spp.",11089906
+"11","Medusa","Sminthea spp.",11089907
+"12","Siphonophore","Order Siphonophora - undifferentiated",11090000
+"13","Siphonophore","Diphyes spp.",11093903
+"14","Siphonophore","Vogtia spinosa",11094003
+"15","Siphonophore","Hippopodius spp.",11094901
+"16","Siphonophore","Vogtia spp.",11094902
+"17","Siphonophore","Rosacea plicata",11095002
+"18","Siphonophore","Amphicaryon acaule",11095003
+"19","Siphonophore","Rosacea spp.",11095902
+"20","Siphonophore","Amphicaryon spp.",11095903
+"21","Siphonophore","Sphaeronectes spp.",11096901
+"22","Siph_physonect","Marrus antarcticus",11100009
+"23","Medusa","Atolla wyvillei",11123002
+"24","Medusa","Atolla spp.",11123901
+"25","Medusa","Periphylla periphylla",11128001
+"26","Ctenophore","Phylum Ctenophora - undifferentiated",1.2e+07
+"27","Ctenophore","Euplokamididae - undifferentiated",12018000
+"28","Ctenophore","Euplokamis spp.",12018901
+"29","Ctenophore","Ctenoplanidae - undifferentiated",12021000
+"30","Ctenophore","Beroe spp.",12090901
+"31","worms","Phylum Platyhelminthes - undifferentiated",1.3e+07
+"32","worms","Phylum Nemertea - undifferentiated",1.4e+07
+"33","worms","Pelagonemertes spp.",14125901
+"34","worms","Class Polychaeta - undifferentiated",2.2e+07
+"35","worms","Alciopidae - undifferentiated",22042000
+"36","worms","Tomopteris spp.",22068901
+"37","Cephalopod","Class Cephalopoda - undifferentiated",23590000
+"38","Cephalopod","Sepiidae - undifferentiated",23607000
+"39","Cephalopod","Sepiolidae - undifferentiated",23609000
+"40","Cephalopod","Order Teuthoidea - undifferentiated",23615000
+"41","Cephalopod","Pyroteuthidae - undifferentiated",23621902
+"42","Cephalopod","Histioteuthis spp.",23630901
+"43","Cephalopod","Cranchiidae - undifferentiated",23643000
+"44","pelagic gastropod","Class Gastropoda - undifferentiated",2.4e+07
+"45","pelagic gastropod","Danilia spp.",24051901
+"46","Pteropod","Order Thecosomata - undifferentiated",24400000
+"47","Pteropod","Limacina spp.",24401901
+"48","Pteropod","Peracle spp.",24403901
+"49","Pteropod","Clio pyramidata",24406001
+"50","Pteropod","Clio recurva",24406004
+"51","Pteropod","Clio spp.",24406901
+"52","Pteropod","Styliola subula",24407002
+"53","Pteropod","Cuvierina spp.",24408901
+"54","Gymnosome","Order Gymnosomata - undifferentiated",24410000
+"55","Gymnosome","Notobranchaeidae - undifferentiated",24413000
+"56","Ostracod","Class Ostracoda - undifferentiated",27100000
+"57","Ostracod","Gigantocypris spp.",27106913
+"58","Copepod","Subclass Copepoda - undifferentiated",27200000
+"59","Copepod","Order Calanoida - undifferentiated",27201000
+"60","Copepod","Calanoides spp.",27205901
+"61","Copepod","Euchirella spp.",27212903
+"62","Copepod","Rhincalanus spp.",27217901
+"63","Gnathaphausia","Gnathophausia gigas",28081003
+"64","Gnathaphausia","Gnathophausia spp.",28081901
+"65","Isopods","Order Isopoda - undifferentiated",28200000
+"66","Amphipods","Order Amphipoda - undifferentiated",28399000
+"67","Amphipods","Tryphosella macropareia",28405145
+"68","Amphipods","Cyphocaris richardi",28406004
+"69","Amphipods","Cyphocaris spp.",28406901
+"70","Amphipods","Uristidae - undifferentiated",28413000
+"71","Amphipods","Gammaridae - undifferentiated",28418000
+"72","Amphipods","Eurythenes gryllus",28427001
+"73","Amphipods","Eurythenes spp.",28427901
+"74","Amphipods","Metacyphocaris spp.",28432901
+"75","Amphipods","Parandania boecki",28490011
+"76","Amphipods","Synopia spp.",28495902
+"77","Amphipods","Lanceola sayana",28555003
+"78","Amphipods","Lanceola spp.",28555901
+"79","Amphipods","Scina spp.",28561901
+"80","Amphipods","Cyllopus spp.",28564901
+"81","Amphipods","Cystisomatidae - undifferentiated",28565000
+"82","Amphipods","Cystisoma spp.",28565901
+"83","Amphipods","Vibiliidae - undifferentiated",28566000
+"84","Amphipods","Vibilia spp.",28566901
+"85","Amphipods","Themisto gaudichaudii",28570022
+"86","Amphipods","Pegohyperia princeps",28570031
+"87","Amphipods","Hyperia spp.",28570901
+"88","Amphipods","Themisto spp.",28570910
+"89","Amphipods","Hyperiidae - undifferentiated",28570911
+"90","Amphipods","Phronima spp.",28572901
+"91","Amphipods","Primno spp.",28573903
+"92","Krill","Order Euphausiacea - undifferentiated",28700000
+"93","Krill","Euphausiidae - undifferentiated",28702000
+"94","Krill","Euphausia similis similis",28702007
+"95","Krill","Nematobrachion boopis",28702011
+"96","Krill","Nematobrachion flexipes",28702012
+"97","Krill","Nematoscelis megalops",28702015
+"98","Krill","Euphausia triacantha",28702043
+"99","Krill","Thysanoessa macrura",28702052
+"100","Krill","Euphausia spp.",28702901
+"101","Krill","Nematobrachion spp.",28702902
+"102","Krill","Nematoscelis spp.",28702903
+"103","Krill","Stylocheiron spp.",28702906
+"104","Krill","Thysanoessa spp.",28702907
+"105","Krill","Thysanopoda spp.",28702908
+"106","Prawn","Gennadas gilchristi",28713007
+"107","Prawn","Gennadas spp.",28713903
+"108","Prawn","Phorcosergia potens",28720020
+"109","Prawn","Sergestes spp.",28720906
+"110","Prawn","Phorcosergia spp.",28720906
+"111","Prawn","Oplophorus novaezeelandiae",28734003
+"112","Prawn","Acanthephyra quadrispinosa",28735007
+"113","Prawn","Notostomus auriculatus",28735028
+"114","Prawn","Acanthephyra spp.",28735901
+"115","Prawn","Pasiphaea spp.",28745901
+"116","Crustacean","Crab melopae",28850903
+"117","Tunicates","Pyrosomatidae - undifferentiated",35101000
+"118","Tunicates","Pyrosoma atlanticum",35101001
+"119","Tunicates","Pyrostremma spinosum",35101002
+"120","Tunicates","Salpidae - undifferentiated",35103000
+"121","Tunicates","Cyclosalpa bakeri",35103002
+"122","Tunicates","Ritteriella amboinensis",35103012
+"123","Tunicates","Salpa fusiformis",35103014
+"124","Tunicates","Soestia zonaria",35103016
+"125","Tunicates","Ihlea spp.",35103904
+"126","Tunicates","Salpa spp.",35103908
+"127","Tunicates","Soestia spp.",35103909
+"128","Tunicates","Thetys spp.",35103911
+"129","Chaetognath","Phylum Chaetognatha - undifferentiated",36010000
+"130","FGB","Nemichthys curvirostris",37076001
+"131","FGB","Avocettina spp.",37076005
+"132","FnGB","Microstoma australis",37097002
+"133","FnGB","Nansenia ardesiaca",37097004
+"134","FnGB","Microstomatidae - undifferentiated",37097906
+"135","FnGB","Bathylagidae - undifferentiated",37098000
+"136","FnGB","Bathylagus spp.",37098903
+"137","FGB","Winteria telescopa",37099003
+"138","FGB","Phosichthys argenteus",37106002
+"139","FGB","Diplophos rebainsi",37106010
+"140","FGB","Cyclothone spp.",37106902
+"141","FGB","Woodsia spp.",37106911
+"142","FGB","Woodsia meyerwardenii",37106913
+"143","FGB","Sternoptychidae - undifferentiated",37107000
+"144","FGB","Argyropelecus gigas",37107005
+"145","FGB","Argyropelecus hemigymnus",37107006
+"146","FGB","Argyropelecus spp.",37107902
+"147","FGB","Sternoptyx spp.",37107905
+"148","FGB","Borostomias spp.",37108902
+"149","FGB","Malacosteus australis",37110003
+"150","FnGB","Stomiidae - undifferentiated",37112000
+"151","FnGB","Stomias gracilis",37112801
+"152","FnGB","Stomias spp.",37112902
+"153","FnGB","Idiacanthus atlanticus",37113002
+"154","FnGB","Persparsia kopua",37115001
+"155","FGB","Myctophidae - undifferentiated",37122000
+"156","FGB","Electrona subaspera",37122014
+"157","FGB","Lampanyctus australis",37122019
+"158","FGB","Diaphus hudsoni",37122061
+"159","FGB","Electrona paucirastra",37122075
+"160","FGB","Nannobrachium achirus",37122096
+"161","FGB","Protomyctophum parallelum",37122102
+"162","FGB","Symbolophorus boops",37122103
+"163","FGB","Gymnoscopelus microlampas",37122106
+"164","FGB","Gymnoscopelus fraseri",37122114
+"165","FGB","Lampanyctus spp.",37122503
+"166","FGB","Protomyctophum spp.",37122521
+"167","FGB","Electrona antarctica",37122750
+"168","FGB","Gymnoscopelus braueri",37122751
+"169","FGB","Gymnoscopelus opisthopterus",37122753
+"170","FGB","Krefftichthys anderssoni",37122754
+"171","FGB","Protomyctophum bolini",37122755
+"172","FGB","Electrona spp.",37122901
+"173","FGB","Gymnoscopelus spp.",37122909
+"174","FGB","Nannobrachium spp.",37122920
+"175","FnGB","Paralepididae - undifferentiated",37126000
+"176","FnGB","Notolepis coatsi",37126750
+"177","FnGB","Notolepis spp.",37126907
+"178","FnGB","Evermannella balbo",37130002
+"179","FnGB","Benthalbella macropinna",37131751
+"180","FnGB","Melanocetus spp.",37213901
+"181","FnGB","Oneirodes notius",37216008
+"182","FnGB","Melanonus gracilis",37224015
+"183","FGB","Melamphaidae - undifferentiated",37251000
+"184","FnGB","Scopelogadus beanii",37251005
+"185","FGB","Poromitra spp.",37251902
+"186","FGB","Scopeloberyx spp.",37251903
+"187","FGB","Oreosomatidae - undifferentiated",37266000
+"188","FnGB","Trachipteridae - undifferentiated",37271000
+"189","FnGB","Liparidae - undifferentiated",37307000
+"190","FGB","Paradiplospinus gracilis",37439005
+"191","FGB","Gempylidae - undifferentiated",37439918
+"192","FGB","Myctophid larvae",NA
+"193","Tunicates","remainder",NA
+"194","Medusa","Hydromedusa",NA
+"195","FGB","Larval Fish",NA
+"196","Other","eggs",NA
+"197","Other","Pelagic worm",NA
+"198","Tunicates","Salpa thompsoni - solitary juv",NA
+"199","Tunicates","Salpa thompsoni - aggregate",NA
+"200","Tunicates","Salpa thompsoni - solitary",NA
+"201","FGB","Fish",NA
+"202","Copepod","Eusirella spp",NA
+"203","Other","Spherical eggs",NA
+"204","Gymnosome","Spongiobranchaea australis",NA
+"205","Crustacean","Phyllosoma",NA
+"206","worms","Suborder Senticaudata - undifferentiated",NA
+"207","Amphipods","Hyperia medusarium",NA
+"208","Prawn","Mixed Prawn larvae",NA
+"209","Isopods","Suborder Asellota - undifferentiated",NA
+"210","Other","Phronima houses",NA
+"211","FGB","Eel Larvae clear",NA

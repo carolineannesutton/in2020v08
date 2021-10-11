@@ -1,0 +1,675 @@
+SPCODE,Species_Name,ACat
+28730000,Infraorder Caridea - undifferentiated,Crust
+28850903,Crab melopae,Crust
+28702007,Euphausia similis,Crust
+99901010,"miscellaneous gelatinous animals [IN2015-E03, 2015]",Gel
+35103000,Salpidae - undifferentiated,Gel
+23650000,Order Octopoda - undifferentiated,Ceph
+23621909,Pyroteuthis spp.,Ceph
+23621906,Abraliopsis spp.,Ceph
+23630901,Histioteuthis spp.,Ceph
+23621007,Pyroteuthis margaritifera,Ceph
+37106902,Cyclothone spp.,FGB
+37224916,Pseudophycis spp.,F
+37107903,Maurolicus spp.,FGB
+37990062,Order Pleuronectiformes - undifferentiated,F
+37067000,"Congridae, Colocongridae - undifferentiated",F
+37465900,Balistidae - undifferentiated,F
+37000000,"""Superclass"" Pisces - undifferentiated",F
+37125001,Scopelosaurus ahlstromi,FnGB
+37990005,mixed eels,F
+37122000,Myctophidae - undifferentiated,FGB
+37122002,Lampanyctodes hectoris,FGB
+37122007,Symbolophorus barnardi,FGB
+0,Other,Other
+28702000,Euphausiidae - undifferentiated,Crust
+37224000,"Melanonidae, Moridae, Euclichthyidae - undifferentiated",F
+37990035,Order Aulopiformes - undifferentiated,F
+23590000,Class Cephalopoda - undifferentiated,Ceph
+28580911,Pronoidae - undifferentiated,Crust
+23662004,Argonauta nodosus,Ceph
+23620001,Lycoteuthis lorigera,Ceph
+35100000,Class Thaliacea - undifferentiated,Gel
+37106002,Phosichthys argenteus,FGB
+37097905,Argentinidae - undifferentiated,F
+37106910,Vinciguerria spp.,FGB
+28572901,Phronima spp.,Crust
+37122012,Diaphus ostenfeldi,FGB
+37122001,Diaphus danae,FGB
+37107002,Maurolicus australis,FGB
+37122061,Diaphus hudsoni,FGB
+28745901,Pasiphaea spp.,Crust
+23636004,Nototodarus gouldi,Ceph
+23609902,Heteroteuthis spp.,Ceph
+23659921,Octopodidae - undifferentiated,Ceph
+11090000,Order Siphonophora - undifferentiated,Gel
+11093000,Diphyidae - undifferentiated,Gel
+11039901,Calycopsis spp.,Gel
+37311053,Verilus anomalus,FGB
+37122925,Symbolophorus spp.,FGB
+37287900,Scorpaenidae - undifferentiated,F
+37106001,Polymetme corythaeola,F
+23615000,Order Teuthoidea - undifferentiated,Ceph
+23643000,Cranchiidae - undifferentiated,Ceph
+28702047,Nyctiphanes australis,Crust
+99280452,"Phyllosoma larvae - undifferentiated [IMOS, 2011]",Crust
+99280482,"Puerulus larvae [, 2016]",Crust
+28200000,Order Isopoda - undifferentiated,Crust
+35103016,Soestia zonaria,Gel
+37122005,Scopelopsis multipunctatus,FGB
+37345001,Emmelichthys nitidus,FGB
+37288000,Triglidae & Peristediidae - undifferentiated,F
+37122910,Hygophum spp.,FGB
+37224011,Pseudophycis breviuscula,F
+37228000,"Bythitidae, Dinematichthyidae, Ophidiidae, Parabrotulidae - undifferentiated",F
+37440000,Trichiuridae - undifferentiated,F
+37255000,Trachichthyidae - undifferentiated,F
+37460000,"Bothidae, Achiropsettidae, Paralichthyidae - undifferentiated",F
+37107003,Polyipnus tridentifer,FGB
+37439917,Scombrolabracidae - undifferentiated,F
+37126000,Paralepididae - undifferentiated,F
+37232900,Coelorinchus spp.,F
+37990085,"Class Chondrichthyes - undifferentiated (except hammerhead sharks, family Sphyrnidae)",F
+37106912,Gonostomatidae - undifferentiated,F
+11096901,Sphaeronectes spp.,Gel
+28570911,Hyperiidae - undifferentiated,Crust
+23607901,Sepia spp.,Ceph
+28702006,Euphausia recurva,Crust
+28711000,Penaeidae - undifferentiated,Crust
+28702901,Euphausia spp.,Crust
+36010000,Phylum Chaetognatha - undifferentiated,Gel
+23607000,Sepiidae - undifferentiated,Ceph
+35103022,Thetys vagina,Gel
+37106908,Polymetme spp.,F
+37107904,Polyipnus spp.,F
+23609906,Iridoteuthis spp.,Ceph
+23607903,Sepiella spp.,Ceph
+27000000,Subphylum Crustacea - undifferentiated,Crust
+NA,NA,Gel
+11093903,Diphyes spp.,Gel
+37297901,Hoplichthys spp.,F
+37469000,Diodontidae - undifferentiated,F
+37107005,Argyropelecus gigas,FGB
+37106022,Ichthyococcus australis,FGB
+37111001,Chauliodus sloani,FnGB
+37220001,Cryptopsaras couesii,FnGB
+37107018,Sternoptyx pseudodiaphana,FGB
+37122003,Myctophum phengodes,FGB
+37099003,Winteria telescopa,F
+37107006,Argyropelecus hemigymnus,FGB
+37106011,Woodsia meyerwaardeni,FGB
+37122923,Protomyctophum spp.,FGB
+37122053,Lobianchia dofleini,FGB
+37446902,Cubiceps spp.,FnGB
+37122914,Lampanyctus spp.,FGB
+37099904,Dolichopteryx spp.,F
+35101001,Pyrosoma atlanticum,Gel
+56175000,Prasiolaceae - undifferentiated,Crust
+11082902,Solmissus spp.,Gel
+11094000,Hippopodiidae - undifferentiated,Gel
+28702012,Nematobrachion flexipes,Crust
+28399000,Order Amphipoda - undifferentiated,Crust
+28573002,Phrosina semilunata,Crust
+28770901,Plesionika spp.,Crust
+28767000,"Hippolytidae, Lysmatidae, Thoridae - undifferentiated",Crust
+99901011,"euphausids + jelly mush [, 2016]",Gel
+28583907,Streetsia spp.,Crust
+11000000,Class Hydrozoa - undifferentiated,Gel
+37109901,Bathophilus spp.,F
+37106005,Vinciguerria attenuata,FGB
+28702902,Nematobrachion spp.,Crust
+11096000,Sphaeronectidae - undifferentiated,Gel
+28702019,Stylocheiron abbreviatum,Crust
+28702009,Euphausia spinifera,Crust
+11094901,Hippopodius spp.,Gel
+28554000,Suborder Hyperiidea - undifferentiated,Crust
+37097906,Microstomatidae - undifferentiated,F
+23621000,"Enoploteuthidae, Pyroteuthidae & Ancistrocheiridae - undifferentiated",Ceph
+37109000,Melanostomiidae - undifferentiated,F
+28702015,Nematoscelis megalops,Crust
+23662901,Argonauta spp.,Ceph
+24400000,Order Thecosomata - undifferentiated,Other
+37099002,Rhynchohyalus natalensis,F
+37109023,Melanostomias niger,FnGB
+37108902,Borostomias spp.,FGB
+37122043,Electrona risso,FGB
+37327036,Howella sherborni,FGB
+37122021,Ceratoscopelus warmingii,FGB
+37266002,Oreosoma atlanticum,FGB
+37224016,Melanonus zugmayeri,F
+37114000,Alepocephalidae - undifferentiated,F
+37251003,Melamphaes suborbitalis,F
+37098000,Bathylagidae - undifferentiated,FGB
+37122004,Hygophum hygomii,FGB
+37251000,Melamphaidae - undifferentiated,FGB
+28081001,Neognathophausia ingens,Crust
+28734902,Oplophorus spp.,Crust
+28713903,Gennadas spp.,Crust
+35101002,Pyrostremma spinosum,Gel
+28702903,Nematoscelis spp.,Crust
+37106004,Sigmops elongatus,F
+37098005,Melanolagus bericoides,F
+37122049,Nannobrachium atrum,FGB
+23643014,Teuthowenia pellucida,Ceph
+28735901,Acanthephyra spp.,Crust
+28720000,Sergestidae - undifferentiated,Crust
+37109908,Photonectes spp.,F
+28720020,Phorcosergia potens,Crust
+28734007,Systellaspis debilis,Crust
+37112902,Stomias spp.,F
+37108003,Astronesthes boulengeri,FnGB
+37122042,Diogenichthys atlanticus,FGB
+37251901,Melamphaes spp.,F
+37122920,Nannobrachium spp.,FGB
+37125000,Notosudidae - undifferentiated,FnGB
+37122022,Notoscopelus resplendens,FGB
+23630004,Histioteuthis eltaninae,Ceph
+28501000,Hyperiopsidae - undifferentiated,Crust
+37427908,Foetorepus spp.,F
+37109008,Eustomias trewavasae,F
+37215901,Himantolophus spp.,F
+37272003,Agrostichthys parkeri,F
+37099001,Monacoa griseus,F
+37122919,Myctophum spp.,FGB
+37279002,Macroramphosus scolopax,F
+37224015,Melanonus gracilis,F
+37107004,Argyripnus iridescens,F
+11082000,Cuninidae - undifferentiated,Gel
+23621004,Pterygioteuthis gemmata,Ceph
+37465903,Monacanthidae - undifferentiated,F
+37337000,Carangidae - undifferentiated,F
+28291000,Hypsimetopodidae - undifferentiated,Crust
+11079000,Order Trachymedusae - undifferentiated,Gel
+11094902,Vogtia spp.,Gel
+23609000,Sepiolidae - undifferentiated,Ceph
+28081901,Gnathophausia spp.,Crust
+24000000,Class Gastropoda - undifferentiated,Crust
+23662000,Argonautidae - undifferentiated,Ceph
+37113002,Idiacanthus atlanticus,FnGB
+37109903,Eustomias spp.,F
+28030000,Order Stomatopoda - undifferentiated,Crust
+37327010,Epigonus denticulatus,F
+37232003,Coelorinchus mirus,F
+37232058,Hymenocephalus longibarbis,F
+23609005,Austrorossia australis,Ceph
+23607002,Sepia cultrata,Ceph
+37122906,Diaphus spp.,FGB
+37427028,Foetorepus apricus,F
+28220000,Cirolanidae - undifferentiated,Crust
+37467000,Tetraodontidae - undifferentiated,F
+37337907,Trachurus spp.,F
+23621008,Ancistrocheirus lesueuri,Ceph
+23606001,Spirula spirula,Ceph
+37122907,Diogenichthys spp.,FGB
+37125007,Scopelosaurus herwigi,FnGB
+37122044,Gonichthys barnesi,FGB
+35000000,Class Ascidiacea - undifferentiated,Gel
+28702905,Pseudeuphausia spp.,Crust
+11089906,Rhopalonema spp.,Gel
+37122045,Hygophum hanseni,FGB
+28770000,Pandalidae - undifferentiated,Crust
+11095902,Rosacea spp.,Gel
+35010000,Cionidae - undifferentiated,Gel
+37122916,Lobianchia spp.,FGB
+37402000,Chiasmodontidae - undifferentiated,F
+37122041,Diaphus termophilus,FGB
+37114002,Xenodermichthys copei,FnGB
+37220901,Ceratias spp.,F
+23621908,Pterygioteuthis spp.,Ceph
+11128901,Periphylla spp.,Gel
+28561901,Scina spp.,Crust
+12090901,Beroe spp.,Gel
+28702011,Nematobrachion boopis,Crust
+22300000,Class Hirudinea - undifferentiated,Other
+37125902,Scopelosaurus spp.,FnGB
+37227001,Macruronus novaezelandiae,FGB
+28735000,Acanthephyridae - undifferentiated,Crust
+37106905,Ichthyococcus spp.,FGB
+28720904,Sergia spp.,Crust
+37342000,Bramidae - undifferentiated,FnGB
+14000000,Phylum Nemertea - undifferentiated,Other
+23630006,Histioteuthis miranda,Ceph
+23621013,Abraliopsis gilchristi,Ceph
+28745019,Alainopasiphaea australis,Crust
+23630008,Histioteuthis macrohista,Ceph
+23621905,Abralia spp.,Ceph
+28770027,Chlorotocus crassicornis,Crust
+37400902,Kathetostoma spp.,FnGB
+99901012,"misc worms [, 2016]",Other
+23622901,Octopoteuthis spp.,Ceph
+23617005,Sepioteuthis australis,Ceph
+10036000,Siphonidiidae - undifferentiated,Gel
+37264001,Cyttus traversi,FGB
+37232000,Macrouridae & Bathygadidae - undifferentiated,F
+23644001,Pholidoteuthis massyae,Ceph
+37224001,Euclichthys polynemus,F
+37067922,Congridae - undifferentiated,F
+37288900,Triglidae - undifferentiated,F
+37990051,Order Lampridiformes - undifferentiated,F
+28702907,Thysanoessa spp.,Crust
+28565901,Cystisoma spp.,Crust
+28702908,Thysanopoda spp.,Crust
+37131000,Scopelarchidae - undifferentiated,F
+28000000,Subclass Malacostraca - undifferentiated,Crust
+37288901,Lepidotrigla spp.,FGB
+37439918,Gempylidae - undifferentiated,F
+37279000,Macroramphosidae - undifferentiated,F
+37990069,Order Scorpaeniformes - undifferentiated,F
+37390000,Pinguipedidae - undifferentiated,F
+37229000,Carapidae - undifferentiated,F
+11093902,Chelophyes spp.,Gel
+23643018,Liguriella podophthalma,Ceph
+27200000,Subclass Copepoda - undifferentiated,Crust
+11089000,Rhopalonematidae - undifferentiated,Gel
+28702016,Nematoscelis microps,Crust
+37224903,Moridae - undifferentiated,F
+37122036,Diaphus meadi,FGB
+28745000,Pasiphaeidae - undifferentiated,Crust
+28544000,Iciliidae - undifferentiated,Crust
+37107905,Sternoptyx spp.,FGB
+37112000,Stomiidae - undifferentiated,F
+12000000,Phylum Ctenophora - undifferentiated,Gel
+37224002,Mora moro,F
+37106907,Phosichthys spp.,FGB
+28734000,Oplophoridae - undifferentiated,Crust
+13000000,Phylum Platyhelminthes - undifferentiated,Other
+37282120,Hippocampus abdominalis,F
+37125002,Scopelosaurus meadi,FnGB
+37106010,Diplophos rebainsi,F
+37107001,Argyropelecus aculeatus,FGB
+37287946,Apistidae - undifferentiated,F
+37441000,Scombridae - undifferentiated,F
+28700000,Order Euphausiacea - undifferentiated,Crust
+24402006,Diacria trispinosa,Other
+24406901,Clio spp.,Other
+28583905,Oxycephalus spp.,Crust
+11002000,Order Anthoathecata - undifferentiated,Gel
+24404902,Cymbulia spp.,Other
+28572902,Phronimella spp.,Crust
+28572000,Phronimidae - undifferentiated,Crust
+37122073,Diaphus kapalae,FGB
+37122019,Lampanyctus australis,FGB
+37254002,Diretmus argenteus,FGB
+28720906,Sergestes spp.,Crust
+35103906,Pegea spp.,Gel
+37460922,Bothidae - undifferentiated,F
+11104001,Physophora hydrostatica,Gel
+11066901,Aequorea spp.,Gel
+28734903,Systellaspis spp.,Crust
+11123003,Atolla parva,Gel
+NA,Valdiviella,Crust
+NA,Euaugaptilus spp.,Crust
+37251007,Sio nordenskjoldii,F
+28406901,Cyphocaris spp.,Crust
+37073002,Nessorhamphus ingolfianus,F
+37449901,Tetragonurus spp.,F
+37213001,Melanocetus johnsonii,FnGB
+11120000,Class Scyphozoa - undifferentiated,Gel
+37125003,Luciosudis normani,F
+37232030,Bathygadus cottoides,F
+37107906,Valenciennellus spp.,F
+37445004,Centrolophus niger,F
+11123001,Atolla vanhoeffeni,Gel
+27106914,Macrocypridina spp.,Crust
+28585000,Parascelidae - undifferentiated,Crust
+11086902,Halicreas spp.,Gel
+24181000,Carinariidae - undifferentiated,Other
+11128001,Periphylla periphylla,Gel
+37130002,Evermannella balbo,F
+37110003,Malacosteus australis,FGB
+37216904,Oneirodes spp.,F
+37115001,Persparsia kopua,F
+22068901,Tomopteris spp.,Other
+16000000,Phylum Nematoda - undifferentiated,Other
+11089903,Colobonema spp.,Gel
+28710000,Penaeoidea & Caridea - undifferentiated,Crust
+11091000,Abylidae - undifferentiated,Gel
+28091000,Bodotriidae - undifferentiated,Crust
+28825000,Infraorder Anomura - undifferentiated,Crust
+27100000,Class Ostracoda - undifferentiated,Crust
+37113000,Idiacanthidae - undifferentiated,F
+23645001,Vampyroteuthis infernalis,Ceph
+11200000,Taiaroidae - undifferentiated,Gel
+11123901,Atolla spp.,Gel
+37076801,Avocettina cf acuticeps,F
+37126803,Magnisudis sp. B,F
+37327114,Rosenblattia robusta,FGB
+37113901,Idiacanthus spp.,F
+99230047,"pteropods [SEF study, 1996]",Other
+28715000,Sicyoniidae - undifferentiated,Crust
+28579901,Brachyscelus spp.,Crust
+28584904,Platyscelus spp.,Crust
+28400000,Suborder Gammaridea - undifferentiated,Crust
+11024902,Pandea spp.,Gel
+22000000,Class Polychaeta - undifferentiated,Other
+28566901,Vibilia spp.,Crust
+28583906,Rhabdosoma spp.,Crust
+28825906,Infraorder Anomura: Superfamily Paguroidea - undifferentiated,Crust
+24407002,Styliola subula,Other
+37098003,Bathylagichthys australis,FnGB
+28570022,Themisto gaudichaudii,Crust
+37112801,Stomias gracilis,F
+12090006,Beroe forskalii,Gel
+22042903,Vanadis spp.,Other
+23636000,Ommastrephidae - undifferentiated,Ceph
+37122016,Metelectrona ventralis,FGB
+NA,eels mixed,F
+23622000,Octopoteuthidae - undifferentiated,Ceph
+28565000,Cystisomatidae - undifferentiated,Crust
+23630000,Histioteuthidae - undifferentiated,Ceph
+37122037,Diaphus metopoclampus,FGB
+37098901,Bathylagichthys spp.,FGB
+37122104,Electrona carlsbergi,FGB
+28566000,Vibiliidae - undifferentiated,Crust
+37122068,Protomyctophum subparallelum,FGB
+28702024,Stylocheiron maximum,Crust
+28702003,Euphausia gibba,Crust
+28702034,Euphausia superba,Crust
+23653000,Opisthoteuthidae - undifferentiated,Ceph
+11126000,Nausithoidae - undifferentiated,Gel
+28702025,Thysanoessa gregaria,Crust
+24404000,Cymbuliidae - undifferentiated,Other
+53120906,Ctenophora spp.,Gel
+23621902,Pyroteuthidae - undifferentiated,Ceph
+NA,subsample of,Crust
+37122115,Hintonia candens,FGB
+37107010,Valenciennellus tripunctulatus,F
+37106903,Diplophos spp.,F
+37449001,Tetragonurus cuvieri,FnGB
+37115002,Holtbyrnia laticauda,F
+37098906,Melanolagus spp.,F
+NA,Sternoptyx obscura,FGB
+37122096,Nannobrachium achirus,FGB
+37122028,Bolinichthys supralateralis,FGB
+37402001,Chiasmodon microcephalus,F
+37122020,Lampanyctus intricarius,FGB
+37251004,Poromitra atlantica,F
+23621901,Enoploteuthidae - undifferentiated,Ceph
+37251005,Scopelogadus beanii,F
+37122017,Lampichthys procerus,FGB
+37446006,Cubiceps baxteri,F
+37122047,Lampadena notialis,FGB
+37020027,Etmopterus bigelowi,FnGB
+37122075,Electrona paucirastra,FGB
+37122018,Gymnoscopelus piabilis,FGB
+NA,Ichthyococcus elongatus,FGB
+37122067,Protomyctophum normani,FGB
+37446010,Cubiceps caeruleus,FnGB
+37075901,Serrivomer spp.,FnGB
+37108010,Borostomias antarcticus,FGB
+37251904,Scopelogadus spp.,F
+37108801,Astronesthes illuminatus,FnGB
+37076901,Avocettina spp.,FGB
+NA,Bathysphyraenops simplex,F
+37130000,Evermannellidae - undifferentiated,F
+37076000,Nemichthyidae - undifferentiated,F
+37122084,Diaphus garmani,FGB
+37257001,Anoplogaster cornuta,FGB
+37107019,Sternoptyx pseudobscura,FGB
+37126908,Stemonosudis spp.,F
+37122063,Lampanyctus macdonaldi,FGB
+37445002,Tubbia tasmanica,FnGB
+37122094,Lampadena luminosa,FGB
+37446008,Cubiceps pauciradiatus,F
+NA,Zu elongatus,F
+37109905,Melanostomias spp.,F
+37109028,Opostomias micripnus,FnGB
+37131005,Scopelarchus guentheri,F
+37122903,Bolinichthys spp.,FGB
+37343901,Caristius spp.,F
+37402002,Dysalotus oligoscolus,F
+37122008,Diaphus perspicillatus,FGB
+37073003,Derichthys serpentinus,FGB
+37213901,Melanocetus spp.,FnGB
+37251903,Scopeloberyx spp.,FGB
+37115007,Normichthys yahganorum,F
+37130001,Coccorella atlantica,F
+37251002,Melamphaes longivelis,F
+37106008,Diplophos taenia,F
+37109031,Photonectes braueri,F
+37232041,Odontomacrurus murrayi,F
+37232904,Bathygadus spp.,F
+37109906,Opostomias spp.,F
+NA,Argyropelecus olfersii,FGB
+37122024,Benthosema suborbitale,FGB
+37342001,Brama brama,FnGB
+37440902,Aphanopus spp.,F
+37215001,Himantolophus appelii,F
+37342007,Pterycombus petersii,F
+37216000,Oneirodidae - undifferentiated,F
+37076001,Nemichthys curvirostris,F
+37327912,Howella spp.,FGB
+NA,Melamphaes eulepis,F
+37114901,Alepocephalus spp.,F
+37251902,Poromitra spp.,F
+37445910,Tubbia spp.,F
+NA,Leptostomias,F
+35101000,Pyrosomatidae - undifferentiated,Gel
+37220000,Ceratiidae - undifferentiated,F
+37222001,Haplophryne mollis,F
+37131901,Benthalbella spp.,F
+37126902,Lestidiops spp.,F
+37224007,Notophycis marginata,F
+23645901,Vampyroteuthis spp.,Ceph
+28086000,Mysidae - undifferentiated,Crust
+28720001,Eusergestes antarcticus,Crust
+37122033,Diaphus effulgens,FGB
+37106007,Vinciguerria poweriae,F
+28735007,Acanthephyra quadrispinosa,Crust
+28734003,Oplophorus novaezeelandiae,Crust
+37122103,Symbolophorus boops,FGB
+23643902,Cranchia spp.,Ceph
+37122051,Lampanyctus lepidolychnus,FGB
+28583000,Oxycephalidae - undifferentiated,Crust
+37122052,Lampanyctus pusillus,FGB
+28720002,Parasergestes armatus,Crust
+37098009,Bathylagichthys longipinnis,F
+37098004,Bathylagichthys greyae,F
+23643901,Bathothauma spp.,Ceph
+28735034,Acanthephyra pelagica,Crust
+37110001,Malacosteus niger,FnGB
+37228961,Ophidiidae - undifferentiated,F
+28735028,Notostomus auriculatus,Crust
+37470000,Molidae - undifferentiated,F
+37228960,Bythitidae - undifferentiated,F
+37115000,Platytroctidae - undifferentiated,F
+37122102,Protomyctophum parallelum,FGB
+37251001,Scopeloberyx microlepis,F
+37110902,Malacosteus spp.,F
+37122106,Gymnoscopelus microlampas,FGB
+NA,Poromitra megalops,F
+37122069,Taaningichthys bathyphilus,FGB
+37098002,Bathylagus antarcticus,F
+28713007,Gennadas gilchristi,Crust
+37327001,Epigonus lenimen,FGB
+37232910,Hymenocephalus spp.,F
+37112002,Stomias boa,FnGB
+NA,Paraliparis micrurus,F
+37232016,Coryphaenoides subserrulatus,FGB
+37122050,Lampanyctus festivus,FGB
+37122048,Lampanyctus alatus,FGB
+28711920,Funchalia spp.,Crust
+37122038,Diaphus mollis,FGB
+NA,Bathylagichthys parini,F
+NA,Nansenia tenuicauda,F
+23643906,Leachia spp.,Ceph
+37020012,Centroselachus crepidater,FnGB
+37440901,Trichiurus spp.,F
+37311949,Synagrops spp.,F
+37108014,Neonesthes microcephalus,F
+37020021,Etmopterus granulosus,FnGB
+37266001,Neocyttus rhomboidalis,FGB
+28720018,Deosergestes disjunctus,Crust
+28745008,Parapasiphae sulcatifrons,Crust
+28720030,Deosergestes corniculum,Crust
+NA,Bathylagus gracilis,F
+37232919,Mesovagus spp.,F
+37076903,Nemichthys spp.,FnGB
+28734004,Oplophorus spinosus,Crust
+37107016,Polyipnus ruggeri,F
+37097002,Microstoma australis,F
+NA,Opisthoproctus soleatus,F
+37108901,Astronesthes spp.,FnGB
+37107008,Polyipnus aquavitus,F
+23633901,Chtenopteryx spp.,Ceph
+37106904,Gonostoma spp.,F
+28720003,Sergestes atlanticus,Crust
+37130902,Evermannella spp.,F
+23623905,Onychoteuthis spp.,Ceph
+23634000,Brachioteuthidae - undifferentiated,Ceph
+37402903,Kali spp.,F
+37131904,Scopelarchus spp.,F
+23636910,Todarodes spp.,Ceph
+37445003,Schedophilus huttoni,F
+37020015,Etmopterus pusillus,FnGB
+37109902,Echiostoma spp.,F
+37232908,Gadomus spp.,F
+37109029,Pachystomias microdon,F
+37015901,Apristurus spp.,FnGB
+28702055,Thysanopoda egregia,Crust
+37122062,Lampadena speculigera,FGB
+37122014,Electrona subaspera,FGB
+37264005,Cyttus novaezealandiae,FGB
+37122912,Lampadena spp.,FGB
+11123002,Atolla wyvillei,Gel
+37122754,Krefftichthys anderssoni,FGB
+37122114,Gymnoscopelus fraseri,FGB
+37076004,Labichthys yanoi,F
+37122755,Protomyctophum bolini,FGB
+37122750,Electrona antarctica,FGB
+28702043,Euphausia triacantha,Crust
+NA,Gigantocypris muelleri,Crust
+37122909,Gymnoscopelus spp.,FGB
+37122117,Protomyctophum tenisoni,FGB
+37232054,Cynomacrurus piriei,F
+NA,Calycopsis borchgrevinki,Gel
+NA,Protomyctophum antarctica,FGB
+37122113,Gymnoscopelus bolini,FGB
+37122901,Electrona spp.,FGB
+37125004,Scopelosaurus hamiltoni,FnGB
+37122751,Gymnoscopelus braueri,FGB
+37122116,Protomyctophum andriashevi,FGB
+23632901,Bathyteuthis spp.,Ceph
+23643010,Galiteuthis glacialis,Ceph
+37131751,Benthalbella macropinna,F
+NA,Nansenia antarctica,F
+37439005,Paradiplospinus gracilis,F
+37131750,Benthalbella elongata,F
+35102000,Doliolidae - undifferentiated,Gel
+28702044,Euphausia vallentini,Crust
+37122110,Protomyctophum gemmatum,FGB
+28594000,Caprellidae - undifferentiated,Crust
+37231001,Melanostigma gelatinosum,F
+23609908,Stoloteuthis spp.,Ceph
+28418000,Gammaridae - undifferentiated,Crust
+37307903,Paraliparis spp.,F
+28770905,Heterocarpus spp.,Crust
+37224009,Halargyreus johnsonii,FGB
+37122753,Gymnoscopelus opisthopterus,FGB
+37343903,Platyberyx spp.,F
+37111901,Chauliodus spp.,FnGB
+37122752,Gymnoscopelus nicholsi,FGB
+37070001,Diastobranchus capensis,F
+37229902,Echiodon spp.,F
+37126750,Notolepis coatsi,F
+37445000,Centrolophidae - undifferentiated,F
+NA,Bathylagus tenuis,F
+23651000,Cirroteuthidae - undifferentiated,Ceph
+28713000,Benthesicymidae - undifferentiated,Crust
+37224912,Melanonus spp.,FGB
+37227003,"Lyconus sp. [in Paxton et al, 1989]",FGB
+37106801,Cyclothone sp. A,FGB
+37097903,Microstoma spp.,F
+37109907,Pachystomias spp.,F
+37122905,Ceratoscopelus spp.,FGB
+37109801,Leptostomias sp. A,F
+37232004,Lepidorhynchus denticulatus,FGB
+37327900,Epigonus spp.,FGB
+37022002,Echinorhinus cookei,FnGB
+37279001,Centriscops humerosus,FGB
+37369002,Oplegnathus woodwardi,F
+23636906,Nototodarus spp.,Ceph
+22021000,Amphinomidae - undifferentiated,Other
+27232004,Centropages orsinii,Crust
+37098008,Bathylagichthys problematicus,F
+37097904,Nansenia spp.,F
+23623006,Onykia robsoni,Ceph
+35103913,Iasis spp.,Gel
+11132004,Pelagia noctiluca,Gel
+11089007,Rhopalonema velatum,Gel
+37122109,Loweina interrupta,FGB
+37099000,Opisthoproctidae - undifferentiated,F
+23606901,Spirula spp.,Ceph
+11100911,Agalmatidae - undifferentiated,Gel
+37109009,Bathophilus ater,F
+23643003,Helicocranchia pfefferi,Ceph
+24402903,Diacria spp.,Other
+NA,Paralepis,F
+11086002,Halicreas minimum,Gel
+11083901,Pegantha spp.,Gel
+NA,Euaugaptilus,Crust
+23622003,Octopoteuthis sicula,Ceph
+11095003,Amphicaryon acaule,Gel
+28735905,Notostomus spp.,Crust
+28565001,Cystisoma pellucida,Crust
+NA,Gaussia,Crust
+24402901,Cavolinia spp.,Other
+11095903,Amphicaryon spp.,Gel
+37133001,Rondeletia loricata,F
+37122029,Centrobranchus nigroocellatus,FGB
+37232917,Malacocephalus spp.,F
+37126001,Macroparalepis macrogeneion,FnGB
+11095901,Praya spp.,Gel
+24183000,Superfamily Pterotracheoidea - undifferentiated,Other
+24402902,Diacavolinia spp.,Other
+37109021,Flagellostomias boureei,F
+23638901,Chiroteuthis spp.,Ceph
+23636006,Nototodarus sloanii,Ceph
+22042000,Alciopidae - undifferentiated,Other
+NA,Hydromyles globulosa,Crust
+NA,unident,Other
+37126007,Lestidium atlanticum,FnGB
+23637001,Thysanoteuthis rhombus,Ceph
+24182005,Pterotrachea scutata,Other
+11128000,Periphyllidae - undifferentiated,Gel
+37109001,Bathophilus abarbatus,F
+24182004,Pterotrachea coronata,Other
+11089904,Pantachogon spp.,Gel
+37107000,Sternoptychidae - undifferentiated,FGB
+37343001,Neocaristius heemstrai,FnGB
+37215004,Himantolophus stewarti,Gel
+37106003,Gonostoma atlanticum,F
+NA,Physonectae,Gel
+24182000,Pterotracheidae - undifferentiated,Other
+37139901,Gigantura spp.,F
+11089909,Crossota spp.,Gel
+37216903,Dolopichthys spp.,F
+37114014,Alepocephalus australis,F
+37073000,Derichthyidae - undifferentiated,F
+NA,Roulenia maderensis,F
+11095000,Prayidae - undifferentiated,Gel
+24182901,Firoloida spp.,Other
+37122027,Bolinichthys photothorax,FGB
+37122093,Lampadena chavesi,FGB
+37122054,Lobianchia gemellarii,FGB
+37122070,Notoscopelus caudispinosus,FGB
+37251006,Scopelogadus mizolepis,F
+37107902,Argyropelecus spp.,FGB
+37122032,Diaphus brachycephalus,FGB
+37331000,Malacanthidae - undifferentiated,F
+NA,Myctophum hygomii,FGB
+11150000,Class Cubozoa - undifferentiated,Gel
+NA,Taaningichthys minimus,FGB
+37107013,Argyropelecus sladeni,FGB
+37122100,Myctophum selenops,FGB
+37108000,Astronesthidae - undifferentiated,FnGB
+NA,Lampadena dea,FGB
+37232929,Macrouridae - undifferentiated,F
+37106906,Margrethia spp.,F
+37449003,Tetragonurus atlanticus,FGB
+37446000,Nomeidae - undifferentiated,F
+NA,Ahliesaurus berryi,F
+37122913,Lampanyctodes spp.,FGB
+37122056,Myctophum nitidulum,FGB
+37075000,Serrivomeridae - undifferentiated,FnGB
+37122926,Taaningichthys spp.,F
