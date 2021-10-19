@@ -18,6 +18,73 @@ library(dplyr)
 #load data
 catchcomp <- read.csv("Results/IN2020_V08_CatchComp.csv")
 ```
+#Sutton modifications:
+## use Acoustic_Category 
+## use speed estiamted volume filtered
+
+```{r AE code slightly modified}
+#Sutton modifications:
+# use Acoustic_Category 
+# use speed estiamted volume filtered
+
+#NO Gelatinous
+distinct(catchcomp,Acoustic_Category) 
+
+catchcomp_noG <- catchcomp %>% filter(Acoustic_Category== "Cephalopod"|Acoustic_Category== "Crustaceans"|Acoustic_Category== "F"|Acoustic_Category== "FGB"|
+                                        Acoustic_Category== "FnGB"| Acoustic_Category== "other")
+
+distinct(catchcomp_noG,Acoustic_Category)
+
+day_values_noG <- catchcomp_noG %>% 
+  filter(daylight== "Day")
+
+night_values_noG <- catchcomp_noG %>% 
+  filter(daylight== "Night")
+night_values_noG <- night_values_noG %>%
+  mutate_if(is.numeric, funs(. * -1))
+
+catchcomp_plot_noG <- ggplot(catchcomp_noG, aes(x= Weight_Std_gm3_sp, y= Depth_Stratum, fill= Taxa_PLAOS))  +
+  geom_rect(xmax= -Inf, xmin= 0, ymin=-Inf, ymax=Inf, fill= "lightgray", alpha= 0.7) +
+  geom_bar(data= day_values_noG, stat= "identity")+ geom_bar(data= night_values_noG, stat= "identity") +
+  theme_bw()  + facet_wrap(~Site) + labs(y="Depth Stratum", x="Biomass") +
+  facet_grid(rows= vars(Site), cols= vars(Acoustic_Category), scales = "fixed") + geom_vline(xintercept= 0) 
+
+plot(catchcomp_plot_noG)
+ggsave("figures/catchcomp_noG.jpg")
+```
+#plot just Gelatinous
+```{r Gelatinous }
+catchcomp_G <- catchcomp %>% filter(Taxa_PLAOS== "Chaetognath" | Taxa_PLAOS== "Ctenophore" | Taxa_PLAOS== "Medusa"| Taxa_PLAOS== "Pyrosome"| Taxa_PLAOS== "Salp"
+                                    | Taxa_PLAOS== "Siph_physonect"| Taxa_PLAOS== "Siphohonphore")
+
+day_values_G <- catchcomp_G %>% 
+  filter(daylight== "Day")
+
+night_values_G <- catchcomp_G %>% 
+  filter(daylight== "Night")
+night_values_G <- night_values_G %>%
+  mutate_if(is.numeric, funs(. * -1))
+
+catchcomp_plot_G <- ggplot(catchcomp_G, aes(x= Weight_Std_gm3_sp, y= Depth_Stratum, fill= Taxa_PLAOS))  +
+  geom_rect(xmax= -Inf, xmin= 0, ymin=-Inf, ymax=Inf, fill= "lightgray", alpha= 0.7) +
+  geom_bar(data= day_values_G, stat= "identity")+ geom_bar(data= night_values_G, stat= "identity") +
+  theme_bw()  + facet_wrap(~Site) + labs(y="Depth Stratum", x="Biomass") +
+  facet_grid(rows= vars(Site), cols= vars(Acoustic_Category), scales = "fixed") + geom_vline(xintercept= 0) 
+
+plot(catchcomp_plot_G)
+ggsave("figures/catchcomp_G.jpg")
+
+
+# filter(!Taxa_PLAOS== "Chaetognath" | !Taxa_PLAOS== "Ctenophore" | !Taxa_PLAOS== "Medusa"| !Taxa_PLAOS== "Pyrosome"| !Taxa_PLAOS== "Salp"
+# | !Taxa_PLAOS== "Siph_physonect"| !Taxa_PLAOS== "Siphohonphore")
+# facet_wrap(~Species_facet, scales = "free")
+
+ggsave(catchcomp_plot, filename = "RMTplot.jpg")
+# coord_cartesian(xlim= c(-0.1, 0.1))
+# scale_fill_manual(values = cbp1) +
+
+```
+
 
 ```{r catch comp}
 colnames(catchcomp)
