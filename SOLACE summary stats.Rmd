@@ -3,7 +3,6 @@ title: "Summary data"
 author: "sutton"
 date: "24/09/2021"
 output: html_document
-
 ---
 
 ```{r setup, include=FALSE}
@@ -21,834 +20,120 @@ library(janitor)
 
 
 SOLACE <- read_csv("Results/IN2020_V08_CatchComp.csv")
+
+SOLACE_nogel <- SOLACE %>% 
+  #distinct(Acoustic_Category)
+  filter(Acoustic_Category != "G_nGB")
 ```
 
 
-#Total Summarised Standardised catch
+```{r cummulative biomass}
 
-
-## Summaries for Micronekton >20mm, using Volume Filtered calculated by ship's speed
-```{r total summarised std weight}
-
-
-
-Taxa_Groupings <- SOLACE %>% 
-select(Acoustic_Category,Taxa_Groups,ACat,Taxa_PLAOS) %>% 
-  arrange(Acoustic_Category) %>% 
-    distinct(Acoustic_Category,ACat,Taxa_Groups,Taxa_PLAOS)
-
-```
-# Species List
-
-```{r species list}
-  
-SOLACE_SpeciesList <- SOLACE %>% 
-  select(Acoustic_Category,Taxa_Groups,ACat,CAAB_updated,Taxa_updated) %>% 
-  distinct(Taxa_updated,.keep_all = TRUE) 
-
-write.csv(SOLACE_SpeciesList,"Results/Solace_SpeciesList.csv")
-```
-
-
-```{r summarising data}
-# Total standardised weight
-SOLACE_TW <- SOLACE %>% 
-  group_by(Site, daylight,Depth_Stratum,Deployment) %>% 
-  filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") %>% 
-  #mutate(Weight_Std_gm3 = ifelse(daylight %in% "Night", Weight_Std_gm3*-1, weight_g)) %>% 
-  summarise(TWgm3 = sum(Weight_Std_gm3_sp)) %>% 
-  mutate(TWgm3 = ifelse(daylight %in% "Night", TWgm3*-1, TWgm3)) 
-
-
-# summarise by Acoustic_Category for each deployment
-SOLACE_Acoustic_Category <-SOLACE %>% 
-  group_by(Site,daylight,Depth_Stratum,Deployment, Acoustic_Category) %>% 
-  summarise(Nos = sum(nos), Weight_g = sum(weight_g),
-            Weight_gm3 = sum(Weight_Std_gm3_sp),Abd_nosm3 =sum(Abd_Std_nosm3_sp))
-
-# summarise by ACat for each deployment
-SOLACE_Taxa_PLAOS <-SOLACE %>% 
-  group_by(Site,daylight,Depth_Stratum,Deployment, Taxa_PLAOS) %>% 
-  summarise(Nos = sum(nos), Weight_g = sum(weight_g),
-            Weight_gm3 = sum(Weight_Std_gm3_sp),Abd_nosm3 =sum(Abd_Std_nosm3_sp))
-
-# summarise by Taxa_Groups for each deployment
-SOLACE_M20_Taxa_Groups <-SOLACE %>% 
-  group_by(Site,daylight,Depth_Stratum,Deployment, Taxa_Groups) %>% 
-  summarise(Nos = sum(nos), Weight_g = sum(weight_g),
-            Weight_gm3 = sum(Weight_Std_gm3_sp),Abd_nosm3 =sum(Abd_Std_nosm3_sp))
-
-# summarise by Taxa_updated for each deployment
-SOLACE_M20_Taxa_updated <-SOLACE %>% 
-  group_by(Site,daylight,Depth_Stratum,Deployment, Taxa_updated) %>% 
-  summarise(Nos = sum(nos), Weight_g = sum(weight_g),
-            Weight_gm3 = sum(Weight_Std_gm3_sp),Abd_nosm3 =sum(Abd_Std_nosm3_sp))
-
-
-## TW by Micro_all and VF by gps
-# TW_std_gps <- SOLACE %>% 
-#   group_by(Site, daylight,Depth_Stratum,Deployment) %>% 
-#   filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") %>% 
-#   #mutate(Weight_Std_gm3 = ifelse(daylight %in% "Night", Weight_Std_gm3*-1, weight_g)) %>% 
-#   summarise(TWgm3 = sum(Weight_Std_gm3_gps)) %>% 
-#   mutate(TWgm3 = ifelse(daylight %in% "Night", TWgm3*-1, TWgm3)) 
-# 
-# unique(SOLACE$ACat)
-
-# TW_std_bigger20mm <- SOLACE %>% 
-#   filter(AvgL_mm >= 20) %>% 
-#   group_by(Site, daylight,Depth_Stratum,Deployment) %>% 
-#   filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") %>% 
-#   #mutate(Weight_Std_gm3 = ifelse(daylight %in% "Night", Weight_Std_gm3*-1, weight_g)) %>% 
-#   summarise(TWgm3 = sum(Weight_Std_gm3_sp)) %>% 
-#   mutate(TWgm3 = ifelse(daylight %in% "Night", TWgm3*-1, TWgm3)) 
-
-```
-
-
-# Create Plot
-# TW standardised with speed of net
-```{r Tottal Weight}
-TW20_sp$Depth_Stratum <- factor(as.factor(TW20_sp$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
-TW20_sp$Site <- factor(as.factor(TW20_sp$Site), levels = c("SOTS","55S","58S"))
-TW20_sp_1 <- TW20_sp %>%
-  group_by(Site,daylight,Depth_Stratum) %>%
- #mutate(TW_std = TW_std*1000) %>%
-  summarise(n(),TW20_sp = round(mean(TWgm3,na.rm = TRUE),digits = 2),
-            sd = round(sd(TWgm3,na.rm = TRUE),digits = 2)
-            )
-TW_sp <-ggplot(TW20_sp_1,
-       mapping = aes(x = as.factor(Depth_Stratum),
-                     y = TW20_sp, fill = daylight))+
-  scale_fill_brewer()+
-  geom_errorbar(aes(ymin = TW20_sp - sd, ymax= TW20_sp + sd),
-                width = 0.4, position = position_dodge(0)) +
-geom_col()+
-  coord_flip()+
-  facet_grid(~Site)+
-  theme_bw()
-TW_sp
-ggsave(TW_sp,filename = "figures/tw_sp_M20.jpg")
-
-
-# # TW standardised with gps of net
-# TW_std_gps$Depth_Stratum <- factor(as.factor(TW_std_gps$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
-# TW_std_gps$Site <- factor(as.factor(TW_std_gps$Site), levels = c("SOTS","55S","58S"))
-# TW_std_gps_1 <- TW_std_gps %>%
-#   group_by(Site,daylight,Depth_Stratum) %>%
-#  #mutate(TW_std = TW_std*1000) %>%
-#   summarise(n(),TW_std_gps = round(mean(TWgm3,na.rm = TRUE),digits = 2),
-#             sd = round(sd(TWgm3,na.rm = TRUE),digits = 2)
-#             )
-# TWgps<-ggplot(TW_std_gps_1,
-#        mapping = aes(x = as.factor(Depth_Stratum),
-#                      y = TW_std_gps, fill = daylight))+
-#   scale_fill_brewer()+
-#   geom_errorbar(aes(ymin = TW_std_gps - sd, ymax= TW_std_gps + sd),
-#                 width = 0.4, position = position_dodge(0)) +
-# geom_col()+
-#   coord_flip()+
-#   facet_grid(~Site)+
-#   theme_bw()
-# 
-# TWgps 
-# ggsave(TWgps,filename = "Results/tw_gps.jpg")
-```
-
-# Total Weight Summary using SummarySE
-```{r total weight summary}
-# Summary Using SummarySE 
-## still based on "ccomp_6_SumShot"
-TW20_sp_summary <- summarySE(TW20_sp, measurevar = "TWgm3", groupvars = c("Site", "daylight", "Depth_Stratum"))
-TW20_sp_plot <- ggplot(TW20_sp_summary,
-                     mapping = aes(x = as.factor(Depth_Stratum),
-                                   y = TWgm3, fill = daylight))+
-  #scale_fill_brewer()+
-  geom_errorbar(aes(ymin = TWgm3 - sd, ymax= TWgm3 + sd,colour = daylight),
-                width = 0.4, position = position_dodge(0)) +
-  xlab("Depth Stratum")+
-  ylab("TW20 Standardised wet weight (g/m^3)")+
-  #scale_x_discrete(limits = c(-0.9,0.9))+
-  scale_fill_manual(values=c("light blue","dark blue"))+
-  scale_colour_manual(values =c("light blue", "dark blue"))+
-  geom_col()+
-  coord_flip()+
-  facet_grid(~Site)+
-  theme_bw()
-TW20_sp_plot
-plot(TW20_sp_plot)
-ggsave("figures/Paper/TW20_sp.jpg")
-
-
-# TW_summary_gps <- summarySE(TW_std_gps, measurevar = "TWgm3", groupvars = c("Site", "daylight", "Depth_Stratum"))
-# TWSum_gps_plot <- ggplot(TW_summary_gps,
-#                      mapping = aes(x = as.factor(Depth_Stratum),
-#                                    y = TWgm3, fill = daylight))+
-#   #scale_fill_brewer()+
-#   geom_errorbar(aes(ymin = TWgm3 - sd, ymax= TWgm3 + sd,colour = daylight),
-#                 width = 0.4, position = position_dodge(0)) +
-#   xlab("Depth Stratum")+
-#   ylab("Standardised wet weight (g/m^3)")+
-#   #scale_x_discrete(limits = c(-0.9,0.9))+
-#   scale_fill_manual(values=c("light blue","dark blue"))+
-#   scale_colour_manual(values =c("light blue", "dark blue"))+
-#   geom_col()+
-#   coord_flip()+
-#   facet_grid(~Site)+
-#   theme_bw()
-# TWSum_gps_plot
-# plot(TWSum_gps_plot)
-# ggsave("figures/TWeight_gps_gm3.jpg")
-```
-
-
-# Percent Contribution
-```{r percent contribution biomass by site}
-
-# include only the replicated sites
-SOLACE_M20_1 <- SOLACE %>% 
+SOLACE_Micro <- SOLACE_Micro %>% 
   filter(Site == "55S" | Site == "58S" |Site == "SOTS") %>% 
-  filter(Depth_Stratum =="Meso" | Depth_Stratum == "Epi"|Depth_Stratum=="Lmeso") %>%   drop_na(Site)
+  filter(Depth_Stratum =="Meso" | Depth_Stratum == "Epi"|Depth_Stratum=="Lmeso") %>% 
+  drop_na(Site)
 
-distinct(SOLACE,Depth_Stratum)
-distinct(SOLACE,Depth_Stratum)
+distinct(SOLACE_Micro,Depth_Stratum)
 
-SOLACE_1 <- SOLACE %>% 
+SOLACE_Micro_1 <- SOLACE_Micro %>% 
   select(Site,Acoustic_Category,Taxa_updated,weight_g) %>% 
   group_by(Site,Taxa_updated) %>% 
-  summarise(weight = sum(weight_g)) %>% 
+  summarise(weight = sum(weight_g))
+
+  ungroup() %>% 
+  arrange(Site,-weight) %>% 
+  #mutate(cumsum = cumsum(weight)) %>% 
+  #mutate(cumpercent = cumsum/sum(weight)) %>% 
+  mutate(percent =round(weight/sum(weight),2)) 
+```
+
+```{r cumsum}
+  
+  SOLACE_1 <- SOLACE %>% 
+  select(Site,Acoustic_Category,Taxa_updated,weight_g) %>% 
+  dplyr::group_by(Site,Taxa_updated) %>% 
+  dplyr::summarise(weight = sum(weight_g)) %>% 
   arrange(Site,-weight) %>% 
   mutate(cumsum = cumsum(weight)) %>% 
   mutate(cumpercent = cumsum/sum(weight)) %>% 
   mutate(percent =round(weight/sum(weight),2)) 
+```
 
-write.csv(SOLACE_1,"figures/Paper/CumPercent.csv")
-# 
- SOLACE %>% filter(Acoustic_Category == "FnGB")
+```{r sum biomass by deployment}
+BulkBiomass <- SOLACE %>% 
+  select(Site, daylight,Depth_Stratum, Deployment, Taxa_updated,Acoustic_Category, Abd_Std_nosm3_sp,Weight_Std_gm3_sp) %>%
+  dplyr::group_by(Site, daylight, Depth_Stratum,Deployment) %>% 
+  dplyr::summarise(Weight = round(sum(Weight_Std_gm3_sp)*1000,2), abd = round(sum(Abd_Std_nosm3_sp)*1000,2)) %>% 
+  dplyr::ungroup()
+
+
+
+  
+SOLACE %>% 
+  distinct(Acoustic_Category)
+```
+```{r summary stats}
+BulkBiomass$Depth_Stratum <- factor(as.factor(BulkBiomass$Depth_Stratum), levels=c("Lmeso","Meso","Epi"))
+BulkBiomass$Site <- factor(as.factor(BulkBiomass$Site), levels=c("SOTS","55S","58S"))
+BulkBiomass$daylight <- factor(as.factor(BulkBiomass$daylight), levels=c("Day","Night"))
+
+BulkBiomass %>% 
+  group_by(Site, daylight, Depth_Stratum) %>% 
+  get_summary_stats(Weight, type = "mean_sd")
+```
+boxplot
+```{r boxplot}
+bxp <- ggboxplot(
+  BulkBiomass, x = "daylight", y = "Weight", 
+  color = "Depth_Stratum", palette = "jco", facet.by = "Site"
+  )
+bxp
 ```
 
 
-# Plots by Acoustic_Groups 
-
-```{r Acoustic_Groups}
-
-# G_nGB
-Ind_Acoustic_Category <- S_M20_Acoustic_Category%>% 
-  group_by(Site,daylight,Depth_Stratum,Deployment) %>% 
-  filter(Acoustic_Category=="G_nGB") %>% 
- # filter(Taxa_updated =="Lampanyctus australis") %>% 
-  filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") %>% 
-  #mutate(Weight_Std_gm3 = ifelse(daylight %in% "Night", Weight_Std_gm3*-1, weight_g)) %>% 
-  summarise(TWgm3 = sum(Weight_gm3)) %>% 
-  mutate(TWgm3 = ifelse(daylight %in% "Night", TWgm3*-1, TWgm3)) %>% 
-  group_by(Site, daylight,Depth_Stratum) %>% 
-  summarise(TWgm3_avg = mean(TWgm3),n(),sd=sd(TWgm3,na.rm = TRUE))
-Ind_Acoustic_Category$Site <- factor(as.factor(Ind_Acoustic_Category$Site), levels = c("SOTS","55S","58S"))
-Ind_Acoustic_Category$Depth_Stratum <- factor(as.factor(Ind_Acoustic_Category$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
-Ind_Acoustic_Category_plot <- ggplot(Ind_Acoustic_Category,
-                     mapping = aes(x = as.factor(Depth_Stratum),
-                                   y = TWgm3_avg, fill = daylight))+
-    geom_errorbar(aes(ymin = TWgm3_avg - sd, ymax= TWgm3_avg + sd, colour = factor(daylight)),
-                width = 0.3, position = position_dodge(0)) +
-  #geom_errorbar(aes(ymin=y, ymax=y_upper.error), colour="blue", width = 0.1) +
-  #geom_errorbar(aes(ymin=y_lower.error, ymax=y), colour="red", width = 0.1) +
-  xlab("Depth Stratum")+
-  ylab("G_nGB: Standardised wet weight (g/m^3)")+
-  #scale_x_discrete(limits = c(-0.9,0.9))+
-  scale_colour_manual("daylight",values=c("light blue","dark blue"))+
-  scale_fill_manual("daylight",values=c("light blue","dark blue"))+
-  geom_col()+
-  coord_flip()+
-  facet_grid(~Site)+
-  theme_bw()
-plot(Ind_Acoustic_Category_plot)
-ggsave("figures/Paper/G_nGB.jpg")
+outliers
+```{r outliers}
+BulkBiomass %>%
+  group_by(Site, daylight, Depth_Stratum) %>%
+  identify_outliers(Weight)
+# dont get this
 ```
 
 
+normality
+```{r normality}
+model  <- lm(Weight ~ Site*daylight*Depth_Stratum, data = BulkBiomass)
+# Create a QQ plot of residuals
+ggqqplot(residuals(model))
+# Compute Shapiro-Wilk test of normality
+shapiro_test(residuals(model))
 
-
-G_GB
-```{r G_GB}
-
-# G_GB
-Ind_Acoustic_Category <- S_M20_Acoustic_Category%>% 
-  group_by(Site,daylight,Depth_Stratum,Deployment) %>% 
-  filter(Acoustic_Category=="G_GB") %>% 
- # filter(Taxa_updated =="Lampanyctus australis") %>% 
-  filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") %>% 
-  #mutate(Weight_Std_gm3 = ifelse(daylight %in% "Night", Weight_Std_gm3*-1, weight_g)) %>% 
-  summarise(TWgm3 = sum(Weight_gm3)) %>% 
-  mutate(TWgm3 = ifelse(daylight %in% "Night", TWgm3*-1, TWgm3)) %>% 
-  group_by(Site, daylight,Depth_Stratum) %>% 
-  summarise(TWgm3_avg = mean(TWgm3),n(),sd=sd(TWgm3,na.rm = TRUE))
-Ind_Acoustic_Category$Site <- factor(as.factor(Ind_Acoustic_Category$Site), levels = c("SOTS","55S","58S"))
-Ind_Acoustic_Category$Depth_Stratum <- factor(as.factor(Ind_Acoustic_Category$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
-Ind_Acoustic_Category_plot <- ggplot(Ind_Acoustic_Category,
-                     mapping = aes(x = as.factor(Depth_Stratum),
-                                   y = TWgm3_avg, fill = daylight))+
-    geom_errorbar(aes(ymin = TWgm3_avg - sd, ymax= TWgm3_avg + sd, colour = factor(daylight)),
-                width = 0.3, position = position_dodge(0)) +
-  #geom_errorbar(aes(ymin=y, ymax=y_upper.error), colour="blue", width = 0.1) +
-  #geom_errorbar(aes(ymin=y_lower.error, ymax=y), colour="red", width = 0.1) +
-  xlab("Depth Stratum")+
-  ylab("G_GB: Standardised wet weight (g/m^3)")+
-  #scale_x_discrete(limits = c(-0.9,0.9))+
-  scale_colour_manual("daylight",values=c("light blue","dark blue"))+
-  scale_fill_manual("daylight",values=c("light blue","dark blue"))+
-  geom_col()+
-  coord_flip()+
-  facet_grid(~Site)+
-  theme_bw()
-plot(Ind_Acoustic_Category_plot)
-ggsave("figures/Paper/G_GB.jpg")
-
+# probs not quite normally distributed - should tranform
 ```
-
-FGB
-```{r FGB}
-
-# FGB
-Ind_Acoustic_Category <- S_M20_Acoustic_Category%>% 
-  group_by(Site,daylight,Depth_Stratum,Deployment) %>% 
-  filter(Acoustic_Category=="FGB") %>% 
- # filter(Taxa_updated =="Lampanyctus australis") %>% 
-  filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") %>% 
-  #mutate(Weight_Std_gm3 = ifelse(daylight %in% "Night", Weight_Std_gm3*-1, weight_g)) %>% 
-  summarise(TWgm3 = sum(Weight_gm3)) %>% 
-  mutate(TWgm3 = ifelse(daylight %in% "Night", TWgm3*-1, TWgm3)) %>% 
-  group_by(Site, daylight,Depth_Stratum) %>% 
-  summarise(TWgm3_avg = mean(TWgm3),n(),sd=sd(TWgm3,na.rm = TRUE))
-Ind_Acoustic_Category$Site <- factor(as.factor(Ind_Acoustic_Category$Site), levels = c("SOTS","55S","58S"))
-Ind_Acoustic_Category$Depth_Stratum <- factor(as.factor(Ind_Acoustic_Category$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
-Ind_Acoustic_Category_plot <- ggplot(Ind_Acoustic_Category,
-                     mapping = aes(x = as.factor(Depth_Stratum),
-                                   y = TWgm3_avg, fill = daylight))+
-    geom_errorbar(aes(ymin = TWgm3_avg - sd, ymax= TWgm3_avg + sd, colour = factor(daylight)),
-                width = 0.3, position = position_dodge(0)) +
-  #geom_errorbar(aes(ymin=y, ymax=y_upper.error), colour="blue", width = 0.1) +
-  #geom_errorbar(aes(ymin=y_lower.error, ymax=y), colour="red", width = 0.1) +
-  xlab("Depth Stratum")+
-  ylab("FGB: Standardised wet weight (g/m^3)")+
-  #scale_x_discrete(limits = c(-0.9,0.9))+
-  scale_colour_manual("daylight",values=c("light blue","dark blue"))+
-  scale_fill_manual("daylight",values=c("light blue","dark blue"))+
-  geom_col()+
-  coord_flip()+
-  facet_grid(~Site)+
-  theme_bw()
-plot(Ind_Acoustic_Category_plot)
-ggsave("figures/Paper/FGB.jpg")
-
-```
-F
-```{r FGB}
-
-# F
-Ind_Acoustic_Category <- S_M20_Acoustic_Category%>% 
-  group_by(Site,daylight,Depth_Stratum,Deployment) %>% 
-  filter(Acoustic_Category=="F") %>% 
- # filter(Taxa_updated =="Lampanyctus australis") %>% 
-  filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") %>% 
-  #mutate(Weight_Std_gm3 = ifelse(daylight %in% "Night", Weight_Std_gm3*-1, weight_g)) %>% 
-  summarise(TWgm3 = sum(Weight_gm3)) %>% 
-  mutate(TWgm3 = ifelse(daylight %in% "Night", TWgm3*-1, TWgm3)) %>% 
-  group_by(Site, daylight,Depth_Stratum) %>% 
-  summarise(TWgm3_avg = mean(TWgm3),n(),sd=sd(TWgm3,na.rm = TRUE))
-Ind_Acoustic_Category$Site <- factor(as.factor(Ind_Acoustic_Category$Site), levels = c("SOTS","55S","58S"))
-Ind_Acoustic_Category$Depth_Stratum <- factor(as.factor(Ind_Acoustic_Category$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
-Ind_Acoustic_Category_plot <- ggplot(Ind_Acoustic_Category,
-                     mapping = aes(x = as.factor(Depth_Stratum),
-                                   y = TWgm3_avg, fill = daylight))+
-    geom_errorbar(aes(ymin = TWgm3_avg - sd, ymax= TWgm3_avg + sd, colour = factor(daylight)),
-                width = 0.3, position = position_dodge(0)) +
-  #geom_errorbar(aes(ymin=y, ymax=y_upper.error), colour="blue", width = 0.1) +
-  #geom_errorbar(aes(ymin=y_lower.error, ymax=y), colour="red", width = 0.1) +
-  xlab("Depth Stratum")+
-  ylab("F: Standardised wet weight (g/m^3)")+
-  #scale_x_discrete(limits = c(-0.9,0.9))+
-  scale_colour_manual("daylight",values=c("light blue","dark blue"))+
-  scale_fill_manual("daylight",values=c("light blue","dark blue"))+
-  geom_col()+
-  coord_flip()+
-  facet_grid(~Site)+
-  theme_bw()
-plot(Ind_Acoustic_Category_plot)
-ggsave("figures/Paper/F.jpg")
-
-```
-Crustaceans
-```{r Crustaceans}
-
-# Crustaceans
-Ind_Acoustic_Category <- S_M20_Acoustic_Category%>% 
-  group_by(Site,daylight,Depth_Stratum,Deployment) %>% 
-  filter(Acoustic_Category=="Crustaceans") %>% 
- # filter(Taxa_updated =="Lampanyctus australis") %>% 
-  filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") %>% 
-  #mutate(Weight_Std_gm3 = ifelse(daylight %in% "Night", Weight_Std_gm3*-1, weight_g)) %>% 
-  summarise(TWgm3 = sum(Weight_gm3)) %>% 
-  mutate(TWgm3 = ifelse(daylight %in% "Night", TWgm3*-1, TWgm3)) %>% 
-  group_by(Site, daylight,Depth_Stratum) %>% 
-  summarise(TWgm3_avg = mean(TWgm3),n(),sd=sd(TWgm3,na.rm = TRUE))
-Ind_Acoustic_Category$Site <- factor(as.factor(Ind_Acoustic_Category$Site), levels = c("SOTS","55S","58S"))
-Ind_Acoustic_Category$Depth_Stratum <- factor(as.factor(Ind_Acoustic_Category$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
-Ind_Acoustic_Category_plot <- ggplot(Ind_Acoustic_Category,
-                     mapping = aes(x = as.factor(Depth_Stratum),
-                                   y = TWgm3_avg, fill = daylight))+
-    geom_errorbar(aes(ymin = TWgm3_avg - sd, ymax= TWgm3_avg + sd, colour = factor(daylight)),
-                width = 0.3, position = position_dodge(0)) +
-  #geom_errorbar(aes(ymin=y, ymax=y_upper.error), colour="blue", width = 0.1) +
-  #geom_errorbar(aes(ymin=y_lower.error, ymax=y), colour="red", width = 0.1) +
-  xlab("Depth Stratum")+
-  ylab("Crustaceans: Standardised wet weight (g/m^3)")+
-  #scale_x_discrete(limits = c(-0.9,0.9))+
-  scale_colour_manual("daylight",values=c("light blue","dark blue"))+
-  scale_fill_manual("daylight",values=c("light blue","dark blue"))+
-  geom_col()+
-  coord_flip()+
-  facet_grid(~Site)+
-  theme_bw()
-plot(Ind_Acoustic_Category_plot)
-ggsave("figures/Paper/Crustaceans.jpg")
-
-```
-Cephalopod
-```{r Cephalopod}
-
-# Cephalopod
-Ind_Acoustic_Category <- S_M20_Acoustic_Category%>% 
-  group_by(Site,daylight,Depth_Stratum,Deployment) %>% 
-  filter(Acoustic_Category=="Cephalopod") %>% 
- # filter(Taxa_updated =="Lampanyctus australis") %>% 
-  filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") %>% 
-  #mutate(Weight_Std_gm3 = ifelse(daylight %in% "Night", Weight_Std_gm3*-1, weight_g)) %>% 
-  summarise(TWgm3 = sum(Weight_gm3)) %>% 
-  mutate(TWgm3 = ifelse(daylight %in% "Night", TWgm3*-1, TWgm3)) %>% 
-  group_by(Site, daylight,Depth_Stratum) %>% 
-  summarise(TWgm3_avg = mean(TWgm3),n(),sd=sd(TWgm3,na.rm = TRUE))
-Ind_Acoustic_Category$Site <- factor(as.factor(Ind_Acoustic_Category$Site), levels = c("SOTS","55S","58S"))
-Ind_Acoustic_Category$Depth_Stratum <- factor(as.factor(Ind_Acoustic_Category$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
-Ind_Acoustic_Category_plot <- ggplot(Ind_Acoustic_Category,
-                     mapping = aes(x = as.factor(Depth_Stratum),
-                                   y = TWgm3_avg, fill = daylight))+
-    geom_errorbar(aes(ymin = TWgm3_avg - sd, ymax= TWgm3_avg + sd, colour = factor(daylight)),
-                width = 0.3, position = position_dodge(0)) +
-  #geom_errorbar(aes(ymin=y, ymax=y_upper.error), colour="blue", width = 0.1) +
-  #geom_errorbar(aes(ymin=y_lower.error, ymax=y), colour="red", width = 0.1) +
-  xlab("Depth Stratum")+
-  ylab("Cephalopod: Standardised wet weight (g/m^3)")+
-  #scale_x_discrete(limits = c(-0.9,0.9))+
-  scale_colour_manual("daylight",values=c("light blue","dark blue"))+
-  scale_fill_manual("daylight",values=c("light blue","dark blue"))+
-  geom_col()+
-  coord_flip()+
-  facet_grid(~Site)+
-  theme_bw()
-plot(Ind_Acoustic_Category_plot)
-ggsave("figures/Paper/Cephalopod.jpg")
-
-```
-
-other
-```{r Other}
-
-# other
-Ind_Acoustic_Category <- S_M20_Acoustic_Category%>% 
-  group_by(Site,daylight,Depth_Stratum,Deployment) %>% 
-  filter(Acoustic_Category=="other") %>% 
- # filter(Taxa_updated =="Lampanyctus australis") %>% 
-  filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") %>% 
-  #mutate(Weight_Std_gm3 = ifelse(daylight %in% "Night", Weight_Std_gm3*-1, weight_g)) %>% 
-  summarise(TWgm3 = sum(Weight_gm3)) %>% 
-  mutate(TWgm3 = ifelse(daylight %in% "Night", TWgm3*-1, TWgm3)) %>% 
-  group_by(Site, daylight,Depth_Stratum) %>% 
-  summarise(TWgm3_avg = mean(TWgm3),n(),sd=sd(TWgm3,na.rm = TRUE))
-Ind_Acoustic_Category$Site <- factor(as.factor(Ind_Acoustic_Category$Site), levels = c("SOTS","55S","58S"))
-Ind_Acoustic_Category$Depth_Stratum <- factor(as.factor(Ind_Acoustic_Category$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
-Ind_Acoustic_Category_plot <- ggplot(Ind_Acoustic_Category,
-                     mapping = aes(x = as.factor(Depth_Stratum),
-                                   y = TWgm3_avg, fill = daylight))+
-    geom_errorbar(aes(ymin = TWgm3_avg - sd, ymax= TWgm3_avg + sd, colour = factor(daylight)),
-                width = 0.3, position = position_dodge(0)) +
-  #geom_errorbar(aes(ymin=y, ymax=y_upper.error), colour="blue", width = 0.1) +
-  #geom_errorbar(aes(ymin=y_lower.error, ymax=y), colour="red", width = 0.1) +
-  xlab("Depth Stratum")+
-  ylab("other: Standardised wet weight (g/m^3)")+
-  #scale_x_discrete(limits = c(-0.9,0.9))+
-  scale_colour_manual("daylight",values=c("light blue","dark blue"))+
-  scale_fill_manual("daylight",values=c("light blue","dark blue"))+
-  geom_col()+
-  coord_flip()+
-  facet_grid(~Site)+
-  theme_bw()
-plot(Ind_Acoustic_Category_plot)
-ggsave("figures/Paper/other.jpg")
-
+normality by groups
+```{r shapiro test by groups}
+BulkBiomass %>%
+  group_by(Site, daylight, Depth_Stratum) %>%
+  shapiro_test(Weight)
 ```
 
 
 
-# Summary by Taxa_Groups
-chaetognaths
-```{r chaetognaths}
-
-# chaetognaths
-Ind_Taxa_Groups <- S_M20_Taxa_Groups%>% 
-  group_by(Site,daylight,Depth_Stratum,Deployment) %>% 
-  filter(Taxa_Groups=="chaetognaths") %>% 
- # filter(Taxa_updated =="Lampanyctus australis") %>% 
-  filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") %>% 
-  #mutate(Weight_Std_gm3 = ifelse(daylight %in% "Night", Weight_Std_gm3*-1, weight_g)) %>% 
-  summarise(TWgm3 = sum(Weight_gm3)) %>% 
-  mutate(TWgm3 = ifelse(daylight %in% "Night", TWgm3*-1, TWgm3)) %>% 
-  group_by(Site, daylight,Depth_Stratum) %>% 
-  summarise(TWgm3_avg = mean(TWgm3),n(),sd=sd(TWgm3,na.rm = TRUE))
-Ind_Acoustic_Category$Site <- factor(as.factor(Ind_Acoustic_Category$Site), levels = c("SOTS","55S","58S"))
-Ind_Acoustic_Category$Depth_Stratum <- factor(as.factor(Ind_Acoustic_Category$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
-Ind_Taxa_Group_plot <- ggplot(Ind_Acoustic_Category,
-                     mapping = aes(x = as.factor(Depth_Stratum),
-                                   y = TWgm3_avg, fill = daylight))+
-    geom_errorbar(aes(ymin = TWgm3_avg - sd, ymax= TWgm3_avg + sd, colour = factor(daylight)),
-                width = 0.3, position = position_dodge(0)) +
-  #geom_errorbar(aes(ymin=y, ymax=y_upper.error), colour="blue", width = 0.1) +
-  #geom_errorbar(aes(ymin=y_lower.error, ymax=y), colour="red", width = 0.1) +
-  xlab("Depth Stratum")+
-  ylab("chaetognaths: Standardised wet weight (g/m^3)")+
-  #scale_x_discrete(limits = c(-0.9,0.9))+
-  scale_colour_manual("daylight",values=c("light blue","dark blue"))+
-  scale_fill_manual("daylight",values=c("light blue","dark blue"))+
-  geom_col()+
-  coord_flip()+
-  facet_grid(~Site)+
-  theme_bw()
-plot(Ind_Taxa_Group_plot)
-ggsave("figures/Paper/chaetognaths.jpg")
+QQ test
+```{r qqtest}
+ggqqplot(BulkBiomass, "Weight", ggtheme = theme_bw()) +
+  facet_grid(Site + daylight ~ Depth_Stratum, labeller = "label_both")
 ```
 
-Tunicates
-```{r Tunicates}
-
-# chaetognaths
-Ind_Taxa_Groups <- S_M20_Taxa_Groups%>% 
-  group_by(Site,daylight,Depth_Stratum,Deployment) %>% 
-  filter(Taxa_Groups=="Tunicates") %>% 
-  filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") %>% 
-  #mutate(Weight_Std_gm3 = ifelse(daylight %in% "Night", Weight_Std_gm3*-1, weight_g)) %>% 
-  summarise(TWgm3 = sum(Weight_gm3)) %>% 
-  mutate(TWgm3 = ifelse(daylight %in% "Night", TWgm3*-1, TWgm3)) %>% 
-  group_by(Site, daylight,Depth_Stratum) %>% 
-  summarise(TWgm3_avg = mean(TWgm3),n(),sd=sd(TWgm3,na.rm = TRUE))
-Ind_Acoustic_Category$Site <- factor(as.factor(Ind_Acoustic_Category$Site), levels = c("SOTS","55S","58S"))
-Ind_Acoustic_Category$Depth_Stratum <- factor(as.factor(Ind_Acoustic_Category$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
-Ind_Taxa_Group_plot <- ggplot(Ind_Acoustic_Category,
-                     mapping = aes(x = as.factor(Depth_Stratum),
-                                   y = TWgm3_avg, fill = daylight))+
-    geom_errorbar(aes(ymin = TWgm3_avg - sd, ymax= TWgm3_avg + sd, colour = factor(daylight)),
-                width = 0.3, position = position_dodge(0)) +
-  #geom_errorbar(aes(ymin=y, ymax=y_upper.error), colour="blue", width = 0.1) +
-  #geom_errorbar(aes(ymin=y_lower.error, ymax=y), colour="red", width = 0.1) +
-  xlab("Depth Stratum")+
-  ylab("Tunicates: Standardised wet weight (g/m^3)")+
-  #scale_x_discrete(limits = c(-0.9,0.9))+
-  scale_colour_manual("daylight",values=c("light blue","dark blue"))+
-  scale_fill_manual("daylight",values=c("light blue","dark blue"))+
-  geom_col()+
-  coord_flip()+
-  facet_grid(~Site)+
-  theme_bw()
-plot(Ind_Taxa_Group_plot)
-ggsave("figures/Paper/Tunicates.jpg")
+homgeneity
+```{r levenes}
+BulkBiomass %>% levene_test(Weight ~ Site*daylight*Depth_Stratum)
+# not significant assume homogeneity
 ```
 
-# summary by ACat
-krill
-```{r krill}
-
-# krill
-Ind_S_M20_ACAt <- S_M20_ACAt%>% 
-  group_by(Site,daylight,Depth_Stratum,Deployment) %>% 
-  filter(ACat=="Krill") %>% 
- # filter(Taxa_updated =="Lampanyctus australis") %>% 
-  filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") %>% 
-  #mutate(Weight_Std_gm3 = ifelse(daylight %in% "Night", Weight_Std_gm3*-1, weight_g)) %>% 
-  summarise(TWgm3 = sum(Weight_gm3)) %>% 
-  mutate(TWgm3 = ifelse(daylight %in% "Night", TWgm3*-1, TWgm3)) %>% 
-  group_by(Site, daylight,Depth_Stratum) %>% 
-  summarise(TWgm3_avg = mean(TWgm3),n(),sd=sd(TWgm3,na.rm = TRUE))
-Ind_S_M20_ACAt$Site <- factor(as.factor(Ind_S_M20_ACAt$Site), levels = c("SOTS","55S","58S"))
-Ind_S_M20_ACAt$Depth_Stratum <- factor(as.factor(Ind_S_M20_ACAt$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
-Ind_S_M20_ACAt_plot <- ggplot(Ind_S_M20_ACAt,
-                     mapping = aes(x = as.factor(Depth_Stratum),
-                                   y = TWgm3_avg, fill = daylight))+
-    geom_errorbar(aes(ymin = TWgm3_avg - sd, ymax= TWgm3_avg + sd, colour = factor(daylight)),
-                width = 0.3, position = position_dodge(0)) +
-  #geom_errorbar(aes(ymin=y, ymax=y_upper.error), colour="blue", width = 0.1) +
-  #geom_errorbar(aes(ymin=y_lower.error, ymax=y), colour="red", width = 0.1) +
-  xlab("Depth Stratum")+
-  ylab("Krill: Standardised wet weight (g/m^3)")+
-  #scale_x_discrete(limits = c(-0.9,0.9))+
-  scale_colour_manual("daylight",values=c("light blue","dark blue"))+
-  scale_fill_manual("daylight",values=c("light blue","dark blue"))+
-  geom_col()+
-  coord_flip()+
-  facet_grid(~Site)+
-  theme_bw()
-plot(Ind_S_M20_ACAt_plot)
-ggsave("figures/Paper/krill.jpg")
-
-
-
+Anova
+```{r anova}
+bio.aov <-  BulkBiomass%>% anova_test(Weight ~ Depth_Stratum*daylight*Site)
+bio.aov
 ```
-
-
-Prawn
-```{r prawn}
-
-# Prawn
-Ind_S_M20_ACAt <- S_M20_ACAt%>% 
-  group_by(Site,daylight,Depth_Stratum,Deployment) %>% 
-  filter(ACat=="Prawn") %>% 
-  filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") %>% 
-  #mutate(Weight_Std_gm3 = ifelse(daylight %in% "Night", Weight_Std_gm3*-1, weight_g)) %>% 
-  summarise(TWgm3 = sum(Weight_gm3)) %>% 
-  mutate(TWgm3 = ifelse(daylight %in% "Night", TWgm3*-1, TWgm3)) %>% 
-  group_by(Site, daylight,Depth_Stratum) %>% 
-  summarise(TWgm3_avg = mean(TWgm3),n(),sd=sd(TWgm3,na.rm = TRUE))
-Ind_S_M20_ACAt$Site <- factor(as.factor(Ind_S_M20_ACAt$Site), levels = c("SOTS","55S","58S"))
-Ind_S_M20_ACAt$Depth_Stratum <- factor(as.factor(Ind_S_M20_ACAt$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
-Ind_S_M20_ACAt_plot <- ggplot(Ind_S_M20_ACAt,
-                     mapping = aes(x = as.factor(Depth_Stratum),
-                                   y = TWgm3_avg, fill = daylight))+
-    geom_errorbar(aes(ymin = TWgm3_avg - sd, ymax= TWgm3_avg + sd, colour = factor(daylight)),
-                width = 0.3, position = position_dodge(0)) +
-  #geom_errorbar(aes(ymin=y, ymax=y_upper.error), colour="blue", width = 0.1) +
-  #geom_errorbar(aes(ymin=y_lower.error, ymax=y), colour="red", width = 0.1) +
-  xlab("Depth Stratum")+
-  ylab("Prawn: Standardised wet weight (g/m^3)")+
-  #scale_x_discrete(limits = c(-0.9,0.9))+
-  scale_colour_manual("daylight",values=c("light blue","dark blue"))+
-  scale_fill_manual("daylight",values=c("light blue","dark blue"))+
-  geom_col()+
-  coord_flip()+
-  facet_grid(~Site)+
-  theme_bw()
-plot(Ind_S_M20_ACAt_plot)
-ggsave("figures/Paper/Prawn.jpg")
-
-```
-
-ctenophore
-```{r practenophorewn}
-
-# Prawn
-Ind_S_M20_ACAt <- S_M20_ACAt%>% 
-  group_by(Site,daylight,Depth_Stratum,Deployment) %>% 
-  filter(ACat=="Ctenophore") %>% 
-  filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") %>% 
-  #mutate(Weight_Std_gm3 = ifelse(daylight %in% "Night", Weight_Std_gm3*-1, weight_g)) %>% 
-  summarise(TWgm3 = sum(Weight_gm3)) %>% 
-  mutate(TWgm3 = ifelse(daylight %in% "Night", TWgm3*-1, TWgm3)) %>% 
-  group_by(Site, daylight,Depth_Stratum) %>% 
-  summarise(TWgm3_avg = mean(TWgm3),n(),sd=sd(TWgm3,na.rm = TRUE))
-Ind_S_M20_ACAt$Site <- factor(as.factor(Ind_S_M20_ACAt$Site), levels = c("SOTS","55S","58S"))
-Ind_S_M20_ACAt$Depth_Stratum <- factor(as.factor(Ind_S_M20_ACAt$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
-Ind_S_M20_ACAt_plot <- ggplot(Ind_S_M20_ACAt,
-                     mapping = aes(x = as.factor(Depth_Stratum),
-                                   y = TWgm3_avg, fill = daylight))+
-    geom_errorbar(aes(ymin = TWgm3_avg - sd, ymax= TWgm3_avg + sd, colour = factor(daylight)),
-                width = 0.3, position = position_dodge(0)) +
-  #geom_errorbar(aes(ymin=y, ymax=y_upper.error), colour="blue", width = 0.1) +
-  #geom_errorbar(aes(ymin=y_lower.error, ymax=y), colour="red", width = 0.1) +
-  xlab("Depth Stratum")+
-  ylab("Ctenophore: Standardised wet weight (g/m^3)")+
-  #scale_x_discrete(limits = c(-0.9,0.9))+
-  scale_colour_manual("daylight",values=c("light blue","dark blue"))+
-  scale_fill_manual("daylight",values=c("light blue","dark blue"))+
-  geom_col()+
-  coord_flip()+
-  facet_grid(~Site)+
-  theme_bw()
-plot(Ind_S_M20_ACAt_plot)
-ggsave("figures/Paper/Ctenophore.jpg")
-
-```
-
-
-Siphonophore
-```{r Siphonophore}
-
-# Siphonophore
-Ind_S_M20_ACAt <- S_M20_ACAt%>% 
-  group_by(Site,daylight,Depth_Stratum,Deployment) %>% 
-  filter(ACat=="Siphonophore") %>% 
-  filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") %>% 
-  #mutate(Weight_Std_gm3 = ifelse(daylight %in% "Night", Weight_Std_gm3*-1, weight_g)) %>% 
-  summarise(TWgm3 = sum(Weight_gm3)) %>% 
-  mutate(TWgm3 = ifelse(daylight %in% "Night", TWgm3*-1, TWgm3)) %>% 
-  group_by(Site, daylight,Depth_Stratum) %>% 
-  summarise(TWgm3_avg = mean(TWgm3),n(),sd=sd(TWgm3,na.rm = TRUE))
-Ind_S_M20_ACAt$Site <- factor(as.factor(Ind_S_M20_ACAt$Site), levels = c("SOTS","55S","58S"))
-Ind_S_M20_ACAt$Depth_Stratum <- factor(as.factor(Ind_S_M20_ACAt$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
-Ind_S_M20_ACAt_plot <- ggplot(Ind_S_M20_ACAt,
-                     mapping = aes(x = as.factor(Depth_Stratum),
-                                   y = TWgm3_avg, fill = daylight))+
-    geom_errorbar(aes(ymin = TWgm3_avg - sd, ymax= TWgm3_avg + sd, colour = factor(daylight)),
-                width = 0.3, position = position_dodge(0)) +
-  #geom_errorbar(aes(ymin=y, ymax=y_upper.error), colour="blue", width = 0.1) +
-  #geom_errorbar(aes(ymin=y_lower.error, ymax=y), colour="red", width = 0.1) +
-  xlab("Depth Stratum")+
-  ylab("Siphonophore: Standardised wet weight (g/m^3)")+
-  #scale_x_discrete(limits = c(-0.9,0.9))+
-  scale_colour_manual("daylight",values=c("light blue","dark blue"))+
-  scale_fill_manual("daylight",values=c("light blue","dark blue"))+
-  geom_col()+
-  coord_flip()+
-  facet_grid(~Site)+
-  theme_bw()
-plot(Ind_S_M20_ACAt_plot)
-ggsave("figures/Paper/Siphonophore.jpg")
-```
-
-Medusa
-```{r Medusa}
-
-# Medusa
-Ind_S_M20_ACAt <- S_M20_ACAt%>% 
-  group_by(Site,daylight,Depth_Stratum,Deployment) %>% 
-  filter(ACat=="Medusa") %>% 
-  filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") %>% 
-  #mutate(Weight_Std_gm3 = ifelse(daylight %in% "Night", Weight_Std_gm3*-1, weight_g)) %>% 
-  summarise(TWgm3 = sum(Weight_gm3)) %>% 
-  mutate(TWgm3 = ifelse(daylight %in% "Night", TWgm3*-1, TWgm3)) %>% 
-  group_by(Site, daylight,Depth_Stratum) %>% 
-  summarise(TWgm3_avg = mean(TWgm3),n(),sd=sd(TWgm3,na.rm = TRUE))
-Ind_S_M20_ACAt$Site <- factor(as.factor(Ind_S_M20_ACAt$Site), levels = c("SOTS","55S","58S"))
-Ind_S_M20_ACAt$Depth_Stratum <- factor(as.factor(Ind_S_M20_ACAt$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
-Ind_S_M20_ACAt_plot <- ggplot(Ind_S_M20_ACAt,
-                     mapping = aes(x = as.factor(Depth_Stratum),
-                                   y = TWgm3_avg, fill = daylight))+
-    geom_errorbar(aes(ymin = TWgm3_avg - sd, ymax= TWgm3_avg + sd, colour = factor(daylight)),
-                width = 0.3, position = position_dodge(0)) +
-  #geom_errorbar(aes(ymin=y, ymax=y_upper.error), colour="blue", width = 0.1) +
-  #geom_errorbar(aes(ymin=y_lower.error, ymax=y), colour="red", width = 0.1) +
-  xlab("Depth Stratum")+
-  ylab("Medusa: Standardised wet weight (g/m^3)")+
-  #scale_x_discrete(limits = c(-0.9,0.9))+
-  scale_colour_manual("daylight",values=c("light blue","dark blue"))+
-  scale_fill_manual("daylight",values=c("light blue","dark blue"))+
-  geom_col()+
-  coord_flip()+
-  facet_grid(~Site)+
-  theme_bw()
-plot(Ind_S_M20_ACAt_plot)
-ggsave("figures/Paper/Medusa.jpg")
-
-```
-
-Salps
-```{r Salps}
-
-# Tunicates
-Ind_S_M20_ACAt <- S_M20_ACAt%>% 
-  group_by(Site,daylight,Depth_Stratum,Deployment) %>% 
-  filter(ACat=="Salp") %>% 
-  filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") %>% 
-  #mutate(Weight_Std_gm3 = ifelse(daylight %in% "Night", Weight_Std_gm3*-1, weight_g)) %>% 
-  summarise(TWgm3 = sum(Weight_gm3)) %>% 
-  mutate(TWgm3 = ifelse(daylight %in% "Night", TWgm3*-1, TWgm3)) %>% 
-  group_by(Site, daylight,Depth_Stratum) %>% 
-  summarise(TWgm3_avg = mean(TWgm3),n(),sd=sd(TWgm3,na.rm = TRUE))
-Ind_S_M20_ACAt$Site <- factor(as.factor(Ind_S_M20_ACAt$Site), levels = c("SOTS","55S","58S"))
-Ind_S_M20_ACAt$Depth_Stratum <- factor(as.factor(Ind_S_M20_ACAt$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
-Ind_S_M20_ACAt_plot <- ggplot(Ind_S_M20_ACAt,
-                     mapping = aes(x = as.factor(Depth_Stratum),
-                                   y = TWgm3_avg, fill = daylight))+
-    geom_errorbar(aes(ymin = TWgm3_avg - sd, ymax= TWgm3_avg + sd, colour = factor(daylight)),
-                width = 0.3, position = position_dodge(0)) +
-  #geom_errorbar(aes(ymin=y, ymax=y_upper.error), colour="blue", width = 0.1) +
-  #geom_errorbar(aes(ymin=y_lower.error, ymax=y), colour="red", width = 0.1) +
-  xlab("Depth Stratum")+
-  ylab("Salps: Standardised wet weight (g/m^3)")+
-  #scale_x_discrete(limits = c(-0.9,0.9))+
-  scale_colour_manual("daylight",values=c("light blue","dark blue"))+
-  scale_fill_manual("daylight",values=c("light blue","dark blue"))+
-  geom_col()+
-  coord_flip()+
-  facet_grid(~Site)+
-  theme_bw()
-plot(Ind_S_M20_ACAt_plot)
-ggsave("figures/Paper/Salps.jpg")
-
-```
-pyrosome
-```{r pyrosome}
-
-# Tunicates
-Ind_S_M20_ACAt <- S_M20_ACAt%>% 
-  group_by(Site,daylight,Depth_Stratum,Deployment) %>% 
-  filter(ACat=="Pyrosome") %>% 
-  filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") %>% 
-  #mutate(Weight_Std_gm3 = ifelse(daylight %in% "Night", Weight_Std_gm3*-1, weight_g)) %>% 
-  summarise(TWgm3 = sum(Weight_gm3)) %>% 
-  mutate(TWgm3 = ifelse(daylight %in% "Night", TWgm3*-1, TWgm3)) %>% 
-  group_by(Site, daylight,Depth_Stratum) %>% 
-  summarise(TWgm3_avg = mean(TWgm3),n(),sd=sd(TWgm3,na.rm = TRUE))
-Ind_S_M20_ACAt$Site <- factor(as.factor(Ind_S_M20_ACAt$Site), levels = c("SOTS","55S","58S"))
-Ind_S_M20_ACAt$Depth_Stratum <- factor(as.factor(Ind_S_M20_ACAt$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
-Ind_S_M20_ACAt_plot <- ggplot(Ind_S_M20_ACAt,
-                     mapping = aes(x = as.factor(Depth_Stratum),
-                                   y = TWgm3_avg, fill = daylight))+
-    geom_errorbar(aes(ymin = TWgm3_avg - sd, ymax= TWgm3_avg + sd, colour = factor(daylight)),
-                width = 0.3, position = position_dodge(0)) +
-  #geom_errorbar(aes(ymin=y, ymax=y_upper.error), colour="blue", width = 0.1) +
-  #geom_errorbar(aes(ymin=y_lower.error, ymax=y), colour="red", width = 0.1) +
-  xlab("Depth Stratum")+
-  ylab("Pyrosome: Standardised wet weight (g/m^3)")+
-  #scale_x_discrete(limits = c(-0.9,0.9))+
-  scale_colour_manual("daylight",values=c("light blue","dark blue"))+
-  scale_fill_manual("daylight",values=c("light blue","dark blue"))+
-  geom_col()+
-  coord_flip()+
-  facet_grid(~Site)+
-  theme_bw()
-plot(Ind_S_M20_ACAt_plot)
-ggsave("figures/Paper/Pyrosome.jpg")
-
-```
-#############################
-# Gelatinous bladder: use data from ccomp_Acoustic_Category_M - G_nGB
-G_GB <- S_M20_Acoustic_Category%>% 
-  group_by(Site,daylight,Depth_Stratum,Deployment) %>% 
-  filter(Acoustic_Category=="G_nGB") %>% 
- # filter(Taxa_updated =="Lampanyctus australis") %>% 
-  filter(Depth_Stratum == "Meso"|Depth_Stratum == "Epi"| Depth_Stratum =="Lmeso") %>% 
-  #mutate(Weight_Std_gm3 = ifelse(daylight %in% "Night", Weight_Std_gm3*-1, weight_g)) %>% 
-  summarise(TWgm3 = sum(Weight_gm3)) %>% 
-  mutate(TWgm3 = ifelse(daylight %in% "Night", TWgm3*-1, TWgm3)) %>% 
-  group_by(Site, daylight,Depth_Stratum) %>% 
-  summarise(TWgm3_avg = mean(TWgm3),n(),sd=sd(TWgm3,na.rm = TRUE))
-TW_std_ID_Taxa$Site <- factor(as.factor(TW_std_ID_Taxa$Site), levels = c("SOTS","55S","58S"))
-TW_std_ID_Taxa$Depth_Stratum <- factor(as.factor(TW_std_ID_Taxa$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
-Taxa_Ind_plot <- ggplot(G_GB,
-                     mapping = aes(x = as.factor(Depth_Stratum),
-                                   y = TWgm3_avg, fill = daylight))+
-    geom_errorbar(aes(ymin = TWgm3_avg - sd, ymax= TWgm3_avg + sd, colour = factor(daylight)),
-                width = 0.3, position = position_dodge(0)) +
-  #geom_errorbar(aes(ymin=y, ymax=y_upper.error), colour="blue", width = 0.1) +
-  #geom_errorbar(aes(ymin=y_lower.error, ymax=y), colour="red", width = 0.1) +
-  xlab("Depth Stratum")+
-  ylab("G_nGB: Standardised wet weight (g/m^3)")+
-  #scale_x_discrete(limits = c(-0.9,0.9))+
-  scale_colour_manual("daylight",values=c("light blue","dark blue"))+
-  scale_fill_manual("daylight",values=c("light blue","dark blue"))+
-  geom_col()+
-  coord_flip()+
-  facet_grid(~Site)+
-  theme_bw()
-plot(G_GB)
-ggsave("figures/G_nGB.jpg")
-
-```
-
-
