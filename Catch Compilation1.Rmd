@@ -658,7 +658,7 @@ TW_std_bigger20mm <- ccomp_6_SumShot %>%
 # Create Plot
 # TW standardised with speed of net
 TW_std$Depth_Stratum <- factor(as.factor(TW_std$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
-TW_std$Site <- factor(as.factor(TW_std$Site), levels = c("SOTS","55S","58S"))
+ TW_std$Site <- factor(as.factor(TW_std$Site), levels = c("SOTS","55S","58S"))
 TW_std_1 <- TW_std %>%
   group_by(Site,daylight,Depth_Stratum) %>%
  #mutate(TW_std = TW_std*1000) %>%
