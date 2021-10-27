@@ -23,6 +23,7 @@ library(rstatix) # pip freindly stats
 # data filtered for <20cm, includes physonects, design deployments only
 SOLACE <- read_csv("Results/IN2020_V08_CatchComp.csv")
 
+
 ```
 
 
@@ -260,16 +261,80 @@ geom_col()+
   theme_bw()
 barp
 
+
+SOLACE_nogel <- SOLACE %>% 
+  #distinct(Acoustic_Category)
+  filter(Acoustic_Category != "G_nGB")
 ```
+
+
+```{r cummulative biomass}
+
+SOLACE_Micro <- SOLACE_Micro %>% 
+  filter(Site == "55S" | Site == "58S" |Site == "SOTS") %>% 
+  filter(Depth_Stratum =="Meso" | Depth_Stratum == "Epi"|Depth_Stratum=="Lmeso") %>% 
+  drop_na(Site)
+
+distinct(SOLACE_Micro,Depth_Stratum)
+
+SOLACE_Micro_1 <- SOLACE_Micro %>% 
+  select(Site,Acoustic_Category,Taxa_updated,weight_g) %>% 
+  group_by(Site,Taxa_updated) %>% 
+  summarise(weight = sum(weight_g))
+
+  ungroup() %>% 
+  arrange(Site,-weight) %>% 
+  #mutate(cumsum = cumsum(weight)) %>% 
+  #mutate(cumpercent = cumsum/sum(weight)) %>% 
+  mutate(percent =round(weight/sum(weight),2)) 
+```
+
+```{r cumsum}
+  
+  SOLACE_1 <- SOLACE %>% 
+  select(Site,Acoustic_Category,Taxa_updated,weight_g) %>% 
+  dplyr::group_by(Site,Taxa_updated) %>% 
+  dplyr::summarise(weight = sum(weight_g)) %>% 
+  arrange(Site,-weight) %>% 
+  mutate(cumsum = cumsum(weight)) %>% 
+  mutate(cumpercent = cumsum/sum(weight)) %>% 
+  mutate(percent =round(weight/sum(weight),2)) 
+```
+
+```{r sum biomass by deployment}
+BulkBiomass <- SOLACE %>% 
+  select(Site, daylight,Depth_Stratum, Deployment, Taxa_updated,Acoustic_Category, Abd_Std_nosm3_sp,Weight_Std_gm3_sp) %>%
+  dplyr::group_by(Site, daylight, Depth_Stratum,Deployment) %>% 
+  dplyr::summarise(Weight = round(sum(Weight_Std_gm3_sp)*1000,2), abd = round(sum(Abd_Std_nosm3_sp)*1000,2)) %>% 
+  dplyr::ungroup()
+
+
+
+  
+SOLACE %>% 
+  distinct(Acoustic_Category)
+
+```
+
+```{r summary stats}
+BulkBiomass$Depth_Stratum <- factor(as.factor(BulkBiomass$Depth_Stratum), levels=c("Lmeso","Meso","Epi"))
+BulkBiomass$Site <- factor(as.factor(BulkBiomass$Site), levels=c("SOTS","55S","58S"))
+BulkBiomass$daylight <- factor(as.factor(BulkBiomass$daylight), levels=c("Day","Night"))
+```
+
 
 
 barplot logwt
 ```{r barplot weight}
-barp <-ggplot(Biomass_design,
+
+
+barp <-ggplot(Biomass_Design %>%  
+  mutate(StdWt_avg = ifelse(daylight %in% "Night", StdWt_avg*-1, StdWt_avg)) %>% 
+  mutate(sd = ifelse(daylight %in% "Night", sd*-1, sd)) ,
        mapping = aes(x = as.factor(Depth_Stratum),
-                     y = mean, fill = daylight))+
+                     y = StdWt_avg, fill = daylight))+
   scale_fill_brewer()+
-  geom_errorbar(aes(ymin = mean - sd, ymax= mean + sd),
+  geom_errorbar(aes(ymin = StdWt_avg - sd, ymax= StdWt_avg + sd),
                 width = 0.4, position = position_dodge(0)) +
 geom_col()+
   coord_flip()+
@@ -290,19 +355,55 @@ Biomass_deployment %>%
 
 
 normality
+``` {r}
+BulkBiomass %>% 
+  group_by(Site, daylight, Depth_Stratum) %>% 
+  get_summary_stats(Weight, type = "mean_sd")
+```
+boxplot
+```{r boxplot}
+bxp <- ggboxplot(
+  BulkBiomass, x = "daylight", y = "Weight", 
+  color = "Depth_Stratum", palette = "jco", facet.by = "Site"
+  )
+bxp
+```
+
+
+outliers
+```{r outliers}
+BulkBiomass %>%
+  group_by(Site, daylight, Depth_Stratum) %>%
+  identify_outliers(Weight)
+# dont get this
+
+```
+
 
 In the QQ plot, as all the points fall approximately along the reference line, we can assume normality. 
+
 
 This conclusion is supported by the Shapiro-Wilk test, if the p-value is not significant. 
 then  can assume normality.
 ```{r normality}
 model  <- lm(logwt ~ Site*daylight*Depth_Stratum, data = Biomass_deployment)
+
+model  <- lm(Weight ~ Site*daylight*Depth_Stratum, data = BulkBiomass)
+
 # Create a QQ plot of residuals
 ggqqplot(residuals(model))
 # Compute Shapiro-Wilk test of normality
 shapiro_test(residuals(model))
 
 # probs not quite normally distributed - should transform
+
+# probs not quite normally distributed - should tranform
+```
+normality by groups
+```{r shapiro test by groups}
+BulkBiomass %>%
+  group_by(Site, daylight, Depth_Stratum) %>%
+  shapiro_test(Weight)
 
 ```
 normality by groups
@@ -344,3 +445,24 @@ Biomass_deployment %>%
   group_by(daylight) %>%
   anova_test(Weight ~ Depth_Stratum*Site, error = model)
 ```
+
+
+
+QQ test
+```{r qqtest}
+ggqqplot(BulkBiomass, "Weight", ggtheme = theme_bw()) +
+  facet_grid(Site + daylight ~ Depth_Stratum, labeller = "label_both")
+```
+
+homgeneity
+```{r levenes}
+BulkBiomass %>% levene_test(Weight ~ Site*daylight*Depth_Stratum)
+# not significant assume homogeneity
+```
+
+Anova
+```{r anova}
+bio.aov <-  BulkBiomass%>% anova_test(Weight ~ Depth_Stratum*daylight*Site)
+bio.aov
+```
+
