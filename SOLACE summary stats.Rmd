@@ -225,14 +225,13 @@ ggplot(Biomass_Desgin_AE, aes(x= StdWt_avg, y= Depth_Stratum, fill= Depth_Stratu
 
 
 ```{r summary stats}
-Biomass_deployment$Depth_Stratum <- factor(as.factor(Biomass_deployment$Depth_Stratum), levels=c("Lmeso","Meso","Epi"))
-Biomass_deployment$Site <- factor(as.factor(Biomass_deployment$Site), levels=c("SOTS","55S","58S"))
-Biomass_deployment$daylight <- factor(as.factor(Biomass_deployment$daylight), levels=c("Day","Night"))
-
-Biomass_design <-Biomass_deployment %>% 
-  mutate(logwt = log(Weight)) %>% 
-  group_by(Site, daylight, Depth_Stratum) %>% 
-  get_summary_stats(Weight, type = "mean_sd")
+# Biomass_deployment$Depth_Stratum <- factor(as.factor(Biomass_deployment$Depth_Stratum), levels=c("Lmeso","Meso","Epi"))
+# Biomass_deployment$Site <- factor(as.factor(Biomass_deployment$Site), levels=c("SOTS","55S","58S"))
+# Biomass_deployment$daylight <- factor(as.factor(Biomass_deployment$daylight), levels=c("Day","Night"))
+# 
+# Biomass_design <-Biomass_deployment %>% 
+#   group_by(Site, daylight, Depth_Stratum) %>% 
+#   get_summary_stats(StdWt, type = "mean_sd")
 ```
 boxplot
 ```{r boxplot}

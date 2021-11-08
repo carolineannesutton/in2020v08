@@ -1,0 +1,278 @@
+---
+title: "SOLACE_RMT_analysis"
+author: "Caroline Sutton"
+date: "28/10/2021"
+output:
+ html_document:
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo=TRUE,
+  warning = FALSE,
+  message = FALSE,
+  results = 'asis',
+  fig.align = 'center')
+
+#Load libraries
+library(tidyverse)
+library(knitr)
+library(kableExtra)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+SOLACE <- read_csv("Results/IN2020_V08_CatchComp.csv")
+
+```
+
+
+### Data manipulation
+```{r sum biomass by deployment}
+
+### Total Biomass #############################
+# Order Sites and Depths nicely
+SOLACE$Depth_Stratum <- factor(as.factor(SOLACE$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
+SOLACE$Site <- factor(as.factor(SOLACE$Site), levels = c("SOTS","55S","58S"))
+
+# sum biomass for each deployment
+Biomass_deployment <- SOLACE %>% 
+  select(Site, daylight,Depth_Stratum, Deployment, Taxa_updated,Acoustic_Category, Abd_Std_nosm3_sp,Weight_Std_gm3_sp) %>%
+  dplyr::group_by(Site, daylight, Depth_Stratum,Deployment) %>% 
+  dplyr::summarise(StdWt = sum(Weight_Std_gm3_sp), 
+                   StdAbd = sum(Abd_Std_nosm3_sp)) %>% 
+  dplyr::ungroup() %>% 
+  mutate(logwt = log(StdWt))
+
+# average biomass for each treatment by Site/daylight/Depth_Stratum
+Biomass_Design <- Biomass_deployment %>% 
+  group_by(Site,daylight,Depth_Stratum) %>% 
+  summarise(StdWt_avg = mean(StdWt),sd = sd(StdWt),no_reps = n()) %>% 
+  ungroup()
+
+#### Acoustic_Category ####################
+# sum biomass for each Acoustic_Category within each deployment
+Biomass_AC <- SOLACE %>% 
+  select(Site, daylight,Depth_Stratum, Deployment, Taxa_updated,Acoustic_Category, Abd_Std_nosm3_sp,Weight_Std_gm3_sp) %>%
+  dplyr::group_by(Site, daylight, Depth_Stratum,Deployment,Acoustic_Category) %>% 
+  dplyr::summarise(StdWt = sum(Weight_Std_gm3_sp), 
+                   StdAbd = sum(Abd_Std_nosm3_sp)) %>% 
+  mutate(StdWt = ifelse(daylight %in% "Night", StdWt*-1, StdWt)) %>% 
+  dplyr::ungroup() 
+# Average biomass for each Acoustic_Category  by Site/daylight/Depth_Stratum
+Biomass_Design_AvgAC <- Biomass_AC %>% 
+  group_by(Site,daylight,Depth_Stratum,Acoustic_Category) %>% 
+  summarise(StdWt_AC = mean(StdWt))
+
+```
+
+
+##  Plots
+
+### Biomass by Deployment Site/daylight/Depth_Stratum
+```{r f.1}, out.width='80%', fig.align='center', fig.cap= "Average biomass by Site, daylight and depth"}
+#biomass by shot
+
+Biomass_deployment_daynight <- Biomass_deployment %>% 
+   mutate(StdWt = ifelse(daylight %in% "Night", StdWt*-1, StdWt))
+
+
+deployments<-ggplot(Biomass_deployment_daynight,
+       mapping = aes(x = as.factor(Depth_Stratum),
+                     y = StdWt, fill = daylight))+
+  geom_rect(ymax= -Inf, ymin= 0, xmin=-Inf, xmax=Inf, fill= "grey", alpha= 0.2) +
+      scale_fill_manual(values = c("light blue","dark blue")) +
+  #scale_fill_brewer()+
+geom_point()+
+  geom_hline(yintercept=0)+
+  coord_flip()+
+  facet_grid(Site ~ .,switch = "x")+
+  #theme_bw()
+ labs(y="Total Average Biomass (g/m^3)", x="Depth Stratum") 
+  
+
+deployments
+```
+
+### Total Average Biomass by Site/daylight/Depth_Stratum
+```{r f.1}, out.width='80%', fig.align='center', fig.cap= "Average biomass by Site, daylight and depth"}
+#biomass by shot
+
+Biomass_Desgin_daynight <- Biomass_Design %>% 
+   mutate(StdWt = ifelse(daylight %in% "Night", StdWt_avg*-1, StdWt_avg)) %>% 
+  mutate(sd = ifelse(daylight %in% "Night", sd*-1, sd)) 
+
+
+tw_avg<-ggplot(Biomass_Desgin_daynight,
+       mapping = aes(x = as.factor(Depth_Stratum),
+                     y = StdWt, fill = daylight))+
+  geom_rect(ymax= -Inf, ymin= 0, xmin=-Inf, xmax=Inf, fill= "grey", alpha= 0.2) +
+      scale_fill_manual(values = c("light blue","dark blue")) +
+  #scale_fill_brewer()+
+  geom_errorbar(aes(ymin = StdWt - sd, ymax= StdWt + sd),
+                width = 0.4, position = position_dodge(0)) +
+geom_col()+
+  geom_hline(yintercept=0)+
+  coord_flip()+
+  facet_grid(Site ~ .,switch = "x")+
+  #theme_bw()
+ labs(y="Total Average Biomass (g/m^3)", x="Depth Stratum") 
+  
+
+tw_avg
+
+```
+
+### Sum of Average Biomass for each Acoustic_Category by Site/daylight/Depth_Stratum
+```{r sutton code with Acat}
+# suttons way
+AC_tw_avg <- ggplot(Biomass_Design_AvgAC,
+       mapping = aes(x = Depth_Stratum ,y=StdWt_AC, fill = Acoustic_Category))+
+     #scale_fill_manual(values = c("purple","orange", "blue","dark blue","light blue","light pink","light green")) +
+  geom_rect(ymax= -Inf, ymin= 0, xmin=-Inf, xmax=Inf, fill= "grey", alpha= 0.2) +
+  geom_col()+
+  #geom_hline(yintercept=0)+
+  coord_flip()+
+  facet_grid(Site ~.,switch = "x")+  
+  labs(x="Depth Stratum", y="Avgerage Biomass g/m^3)") 
+AC_tw_avg
+
+
+# for some reason others don't show up when site labels are on the right side
+AC_tw_avg1 <- ggplot(Biomass_Design_AvgAC,
+       mapping = aes(x = Depth_Stratum ,y=StdWt_AC, fill = Acoustic_Category))+
+     #scale_fill_manual(values = c("purple","orange", "blue","dark blue","light blue", "light pink","light green")) +
+  geom_rect(ymax= -Inf, ymin= 0, xmin=-Inf, xmax=Inf, fill= "grey", alpha= 0.2) +
+  geom_col()+
+  #geom_hline(yintercept=0)+
+  coord_flip()+
+  facet_grid(Site ~.,switch = "y")+  
+  labs(x="Depth Stratum", y="Avgerage Biomass g/m^3)") 
+
+AC_tw_avg1
+```
+
+
+---
+
+### Sum of Average Biomass for Taxa_PLAOS by Site/daylight/Depth_Stratum/Acoustic_Category
+```{r Taxa_PLAOS},out.width='100%', fig.align='center', fig.cap= "Average biomass by Site, daylight and depth"}
+
+# sum biomass for each Taxa_PLAOS within each deployment
+## data wrangling
+Biomass_Taxa_PLAOS <- SOLACE %>% 
+  select(Site, daylight,Depth_Stratum, Deployment, Taxa_updated, Acoustic_Category,Taxa_PLAOS, Abd_Std_nosm3_sp,Weight_Std_gm3_sp) %>%
+  dplyr::group_by(Site, daylight, Depth_Stratum,Deployment,Acoustic_Category,Taxa_PLAOS) %>% 
+  dplyr::summarise(StdWt = sum(Weight_Std_gm3_sp), 
+                   StdAbd = sum(Abd_Std_nosm3_sp)) %>% 
+  mutate(StdWt = ifelse(daylight %in% "Night", StdWt*-1, StdWt)) %>% 
+  dplyr::ungroup() 
+
+# Average biomass for each Taxa_PLAOS  by Site/daylight/Depth_Stratum
+Biomass_Design_AvgTP <- Biomass_Taxa_PLAOS %>% 
+  group_by(Site,daylight,Depth_Stratum,Acoustic_Category,Taxa_PLAOS) %>% 
+  summarise(StdWt_TP = mean(StdWt))
+
+TP_tw_avg <- ggplot(Biomass_Design_AvgTP,
+       mapping = aes(x = Depth_Stratum ,y=StdWt_TP, fill = Taxa_PLAOS))+
+     #scale_fill_manual(values = c("purple","orange", "blue","dark blue","light blue","light pink","light green")) +
+  geom_rect(ymax= -Inf, ymin= 0, xmin=-Inf, xmax=Inf, fill= "grey", alpha= 0.2) +
+  geom_col()+
+  #geom_hline(yintercept=0)+
+  coord_flip()+
+  facet_grid(rows= vars(Site), cols= vars(Acoustic_Category), scales = "free") + 
+  labs(x="Depth Stratum", y="Avgerage Biomass (g/m^3)") +
+  theme(legend.position = "bottom")
+  
+
+TP_tw_avg
+
+```
+# ANOVA
+
+outliers
+```{r outliers}
+Biomass_deployment %>%
+  group_by(Site,Depth_Stratum) %>%
+  identify_outliers(StdWt)
+# dont get this
+# deployments 8 and 13 are outliers but not extreme. Outliers are not obvious when using Site alone, all 3 factors or Site&daylight
+```
+
+normality
+``` {r}
+Biomass_deployment %>% 
+  group_by(Site, daylight, Depth_Stratum) %>% 
+  get_summary_stats(StdWt, type = "mean_sd")
+```
+boxplot
+```{r boxplot}
+bxp <- ggboxplot(
+  Biomass_deployment, x = "daylight", y = "StdWt", 
+  color = "Depth_Stratum", palette = "jco", facet.by = "Site"
+  )
+bxp
+```
+outliers
+```{r outliers}
+Biomass_deployment %>%
+  group_by(Site, daylight, Depth_Stratum) %>%
+  identify_outliers(StdWt)
+# dont get this
+```
+
+
+In the QQ plot, as all the points fall approximately along the reference line, we can assume normality. 
+
+
+This conclusion is supported by the Shapiro-Wilk test, if the p-value is not significant. 
+then  can assume normality.
+```{r normality}
+model  <- lm(StdWt ~ Site*daylight*Depth_Stratum, data = Biomass_deployment)
+
+model2  <- lm(logwt ~ Site*daylight*Depth_Stratum, data = Biomass_deployment)
+
+# Create a QQ plot of residuals
+ggqqplot(residuals(model))
+# Compute Shapiro-Wilk test of normality
+shapiro_test(residuals(model))
+
+# probs not quite normally distributed - should transform
+
+# probs not quite normally distributed - should tranform
+```
+
+
+normality by groups
+```{r shapiro test by groups}
+Biomass_deployment %>%
+  group_by(Site, daylight, Depth_Stratum) %>%
+  shapiro_test(StdWt)
+
+```
+
+QQ test
+```{r qqtest}
+ggqqplot(Biomass_deployment, "StdWt", ggtheme = theme_bw()) +
+  facet_grid(Site + daylight ~ Depth_Stratum, labeller = "label_both")
+```
+
+
+homgeneity
+```{r levenes}
+Biomass_deployment %>% levene_test(StdWt ~ Site*daylight*Depth_Stratum)
+# not significant assume homogeneity
+```
+
+Anova
+```{r anova}
+bio.aov <-  Biomass_deployment%>% anova_test(StdWt ~ Depth_Stratum*daylight*Site)
+bio.aov
+# there was a 3way interaction F(2,22)= 3.04, p = 0.039
+```
+
+Post hoc tests
+2 way interactions
+decide which two variables will form the simple two-way interactions and which variable will act as the third (moderator) variable. 
+
+
