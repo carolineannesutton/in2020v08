@@ -41,7 +41,29 @@ SOLACE_cumsum <- SOLACE %>%
   arrange(Site,-weight) %>% 
   mutate(cumsum = cumsum(weight)) %>% 
   mutate(percent =round(weight/sum(weight),2)) %>%
-  mutate(cumpercent = round(cumsum/sum(weight),2))  
+  mutate(cumpercent = round(cumsum/sum(weight),2)) 
+
+SOLACE_cumsum_AC <- SOLACE %>% 
+    select(Site,Acoustic_Category,weight_g) %>% 
+  group_by(Site,Acoustic_Category) %>% 
+  summarise(weight = sum(weight_g)) %>% 
+ # ungroup() %>% 
+  arrange(Site,-weight) %>% 
+  mutate(cumsum = cumsum(weight)) %>% 
+  mutate(percent =round(weight/sum(weight),2)) %>%
+  mutate(cumpercent = round(cumsum/sum(weight),2)) 
+
+# number taxa
+distinct(SOLACE,Taxa_updated)
+# n = 143
+
+# taxa per ACat
+SOLACE %>%  
+  group_by(Acoustic_Category) %>% 
+  distinct(Taxa_updated) %>% 
+  arrange(Acoustic_Category) %>% 
+  select(Acoustic_Category) %>% 
+  count(Acoustic_Category)
 ```
 
 
