@@ -19,6 +19,7 @@ library(ggpubr) # nice plots
 library(rstatix) # pip freindly stats
 # library(geosphere)
 # library(janitor)
+library(vegan)
 
 # data filtered for <20cm, includes physonects, design deployments only
 SOLACE <- read_csv("Results/IN2020_V08_CatchComp.csv")
@@ -34,14 +35,17 @@ SOLACE$Depth_Stratum <- factor(as.factor(SOLACE$Depth_Stratum),levels = c("Lmeso
 SOLACE$Site <- factor(as.factor(SOLACE$Site), levels = c("SOTS","55S","58S"))
 
 SOLACE_cumsum <- SOLACE %>% 
-  select(Site,Acoustic_Category,Taxa_updated,weight_g) %>% 
+  select(Site,Acoustic_Category,Taxa_updated,weight_g,Weight_Std_gm3_sp) %>% 
   group_by(Site,Taxa_updated) %>% 
-  summarise(weight = sum(weight_g)) %>% 
+  summarise(weight = sum(weight_g), stdw = round(sum(Weight_Std_gm3_sp),3)) %>% 
  # ungroup() %>% 
-  arrange(Site,-weight) %>% 
-  mutate(cumsum = cumsum(weight)) %>% 
-  mutate(percent =round(weight/sum(weight),2)) %>%
-  mutate(cumpercent = round(cumsum/sum(weight),2)) 
+  arrange(Site,-stdw) %>% 
+  mutate(cumsum = round(cumsum(stdw),2)) %>% 
+  mutate(percent =round(stdw/sum(stdw),2)) %>%
+  mutate(cumpercent = round(cumsum/sum(stdw),2)) %>% 
+  select(Site,,Taxa_updated,stdw,cumpercent)
+
+write.csv(SOLACE_cumsum,"Results/IN2020_V08_cumsum.csv")
 
 SOLACE_cumsum_AC <- SOLACE %>% 
     select(Site,Acoustic_Category,weight_g) %>% 
@@ -56,10 +60,63 @@ SOLACE_cumsum_AC <- SOLACE %>%
 # number taxa
 distinct(SOLACE,Taxa_updated)
 # n = 143
+SOLACE %>% 
+  group_by(Site) %>% 
+  distinct(Taxa_updated) %>% 
+  summarise(n())
+
+
+SOLACE %>% 
+  group_by(Site) %>% 
+  distinct(Taxa_updated) %>% 
+  summarise(n())
+
+# SOTS =	85, 			55S	= 81			, 58S = 67
+	
+Solace_PA <- SOLACE %>% 
+  group_by(Site) %>% 
+  distinct(Taxa_updated,.keep_all = TRUE) %>% 
+  ungroup() %>% 
+  select(Site,Taxa_updated) %>% 
+  add_column(Present = 1) %>% 
+  pivot_wider(names_from = Site,values_from = Present) %>% 
+   replace(is.na(.), 0) %>% 
+  mutate(sumr= SOTS + `55S`+`58S`) %>% 
+  arrange(SOTS) %>% 
+  arrange(`55S`) %>% 
+ 
+  arrange(-sumr)
+
+# all 3 sites = share 23 taxa
+# SOTS and 55S = share an extra 3
+
+Solace_PA1 <- Solace_PA %>% 
+filter(sumr==1 & `SOTS` == 1) %>% 
+count()
+
+# x= 48
+# y =16
+# z = 12
+# xyz= 23
+# xy = 12
+# yz = 30
+# xz = 2
+
+ library(dplyr)
+ memberorders %>% 
+        group_by(MemID) %>% 
+        summarise(sum2= sum(value[week<=2]), sum4= sum(value[week <=4]), 
+                  count2=sum(week<=2), count4= sum(week<=4))
+
+ Solace_PA %>% 
+  
 
 # taxa per ACat
+
+
+
 SOLACE %>%  
-  group_by(Acoustic_Category) %>% 
+  group_by(Acoustic_Category,Site) %>% 
   distinct(Taxa_updated) %>% 
   arrange(Acoustic_Category) %>% 
   select(Acoustic_Category) %>% 
