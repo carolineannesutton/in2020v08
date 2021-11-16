@@ -42,8 +42,8 @@ SOLACE_cumsum <- SOLACE %>%
   arrange(Site,-stdw) %>% 
   mutate(cumsum = round(cumsum(stdw),2)) %>% 
   mutate(percent =round(stdw/sum(stdw),2)) %>%
-  mutate(cumpercent = round(cumsum/sum(stdw),2)) %>% 
-  select(Site,,Taxa_updated,stdw,cumpercent)
+  mutate(cumpercent = round(cumsum/sum(stdw),2)) 
+  #select(Site,,Taxa_updated,stdw,cumpercent)
 
 write.csv(SOLACE_cumsum,"Results/IN2020_V08_cumsum.csv")
 
@@ -67,7 +67,7 @@ SOLACE %>%
 
 
 SOLACE %>% 
-  group_by(Site) %>% 
+  group_by(Acoustic_Category) %>% 
   distinct(Taxa_updated) %>% 
   summarise(n())
 
@@ -89,6 +89,8 @@ Solace_PA <- SOLACE %>%
 
 # all 3 sites = share 23 taxa
 # SOTS and 55S = share an extra 3
+
+SOLACE
 
 Solace_PA1 <- Solace_PA %>% 
 filter(sumr==1 & `SOTS` == 1) %>% 
