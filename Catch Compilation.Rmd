@@ -19,7 +19,7 @@ library(knitr)
 library(geosphere)
 library(janitor)
 # read in data
-ccomp <- read_csv("data/in2020_v08_samples_validation_210923.csv", col_types = list(Acc_ed = col_character()))
+ccomp <- read_csv("data/in2020_v08_samples_validation_220810.csv", col_types = list(Acc_ed = col_character()))
 length <- read_csv("data/IN2020_VO8_Lengths.csv")
 Shot_withgps <- read_csv("Results/IN2020_V08_Shot_startStop_gps.csv")
 deployments <- read_csv("data/in2020_v08_deployments.csv")
@@ -47,7 +47,8 @@ rename columns and taxa
 # change to uniform names for 'deployment' and 'Accession number' and match species names in length data
 ccomp_2 <- ccomp_1 %>% 
   rename(Deployment = 'Operation No', Acc = 'Accession No', Sample_Type = `Sample Type`) %>% 
-  select(Voyage, Deployment,Acc,Acc_ed,Sample_Type,Taxa,CAAB, Taxa_ed,CAAB_ed, weight_g =`Weight (g)`, Count,Comments,Storage_temp =`Storage temperature`,Preservative,`Container name`,Taxa_updated,CAAB_updated) %>% 
+  select(Voyage, Deployment,Acc,Acc_ed,Acc_edold,Sample_Type,Taxa,CAAB, Taxa_ed,CAAB_ed, weight_g =`Weight (g)`, Count,Comments,Storage_temp =`Storage temperature`,Preservative,`Container name`,Taxa_updated,CAAB_updated) %>% 
+  mutate(Acc_ed = as.numeric(Acc_ed)) %>% 
   
   # fix up Taxa_updated field field
   mutate(Taxa_updated = ifelse(Taxa_updated == "Larval fish","Larval Fish", Taxa_updated)) %>% 
@@ -412,7 +413,16 @@ length_2_avg <- length_2 %>%
   rename(length_mm = `Length _mm`) %>% 
   group_by(Deployment,Acc_ed) %>% 
   summarise(n(),AvgL_mm = mean(length_mm))
+
+length_2_avg <- arrange(length_2_avg, Deployment, Acc_ed)
   
+#find duplicates in the the average lengths
+duplicate_L <- length_2_avg %>% 
+  select(Deployment, Acc_ed) %>% 
+  unique()
+  
+
+
 Dups <-length_2[duplicated(length_2$ID), ]
 
 #plot length data
@@ -470,13 +480,17 @@ Sol_Micro_summary <- Sol_Micro %>%
 Sol_Micro_summary$Depth_Stratum <- factor(as.factor(Sol_Micro_summary$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
 ```
 # summarising data by species to remove duplications of species per shot
+
+###################### need to work out how to summarise different length for sample species ################################################################
+
 ```{r catch comp summary}
 #summarise data by species for each Deployment 
 ## note that this will now remove the Acc
 ## for example Larval Fish often had two accession numbers - one for F and one for Eth preserved samples
+## must average the lengths here b/c sometimes there was two length classes for the same species group. For example 'Salpa thompsoni solitary' and 'Salpa thompsoni aggregate'
 ccomp_5_summary<- ccomp_5 %>% 
   group_by(Deployment,ACat,Taxa_Groups,Acoustic_Category,Taxa_updated,CAAB_updated) %>% 
-  summarise(nos= sum(Count, na.rm = TRUE),weight_g = sum(weight_g, na.rm = TRUE), AvgL_mm) %>% 
+  summarise(nos= sum(Count, na.rm = TRUE),weight_g = sum(weight_g, na.rm = TRUE), AvgL_mm = sum()) %>% 
   rowid_to_column("ID")
 #ccomp_AEC <- ccomp_1 %>% 
 #  filter(sub !="subsample" | sub !="sub") %>% 
