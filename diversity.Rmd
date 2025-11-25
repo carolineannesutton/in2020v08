@@ -1,0 +1,37 @@
+---
+title: "diversity"
+author: "Caroline Sutton"
+date: "12/11/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(vegan)
+library(tidyverse)
+library(dplyr)
+```
+
+```{r data}
+
+data("BCI")
+diversity(BCI,index = "shannon")
+SOLACE <- read_csv("Results/IN2020_V08_CatchComp.csv")
+```
+
+```{r diversity}
+solace_spwide <- SOLACE %>% 
+  select(Site,daylight,Depth_Stratum,Deployment, Taxa_updated,nos) %>% 
+  complete(Taxa_updated = levels(Taxa_updated), fill=list(nos=0)) %>% 
+  pivot_wider(names_from = Taxa_updated, values_from = nos)
+
+ We can use complete to create the combination bassed on the levels and then use pivot_wider
+
+library(dplyr)
+library(tidyr)
+df %>% 
+  complete(color = levels(color), fill = list(nb = 0)) %>% 
+  pivot_wider(names_from = color, values_from = nb)
+  
+
+```

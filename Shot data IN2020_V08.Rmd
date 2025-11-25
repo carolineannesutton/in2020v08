@@ -1,0 +1,39 @@
+---
+title: "Shot data"
+author: "Caroline Sutton"
+date: "29/11/2022"
+output: html_document
+---
+
+
+# set up
+
+Load packages
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(dplyr)
+library(knitr)
+library(ggplot2)
+```
+
+data
+```{r}
+Shot_withgps <- read_csv("Results/IN2020_V08_Shot_startStop_gps.csv")
+```
+
+# exploring shot data
+```{r shot data exploration}
+
+
+
+ggplot(data = (filter(Shot_withgps,Depth_Stratum == "Lmeso" |Depth_Stratum=="Meso" | Depth_Stratum == "Epi")), 
+               aes(VolumeFiltered_m3_speed,Deployment, colour = Depth_Stratum)) +
+ 
+  geom_point()+
+facet_grid(~Site)
+
+ggplot(filter(Shot_withgps,Depth_Stratum == "Lmeso" |Depth_Stratum=="Meso" | Depth_Stratum == "Epi"), aes(x=Deployment,colour = Depth_Stratum)) + 
+  geom_point(aes(y=VolumeFiltered_m3_speed, shape="V_speed")) + 
+  geom_point(aes(y=VolumeFiltered_m3_gps, shape="V_gps")) 
+```
