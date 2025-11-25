@@ -1,0 +1,192 @@
+---
+title: "SOLACE_RMT_analysis"
+author: "Caroline Sutton"
+date: "28/10/2021"
+output:
+ html_document:
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo=TRUE,
+  warning = FALSE,
+  message = FALSE,
+  results = 'asis',
+  fig.align = 'center')
+
+#Load libraries
+library(tidyverse)
+library(knitr)
+library(kableExtra)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+SOLACE <- read_csv("Results/IN2020_V08_CatchComp.csv")
+
+```
+
+---
+
+### Data
+SOLACE <- read_csv("Results/IN2020_V08_CatchComp.csv")
+```{r SOLACEdata, out.width='100%', echo = T}
+
+
+knitr::kable(tail(SOLACE, n = 5),caption = "Catch compilation") %>% 
+  kableExtra::kable_styling("striped") %>%
+  kableExtra::scroll_box(width = "100%")
+```
+
+---
+
+### Data manipulation
+```{r sum biomass by deployment}
+
+### Total Biomass #############################
+# Order Sites and Depths nicely
+SOLACE$Depth_Stratum <- factor(as.factor(SOLACE$Depth_Stratum),levels = c("Lmeso", "Meso", "Epi"))
+SOLACE$Site <- factor(as.factor(SOLACE$Site), levels = c("SOTS","55S","58S"))
+
+# sum biomass for each deployment
+Biomass_deployment <- SOLACE %>% 
+  select(Site, daylight,Depth_Stratum, Deployment, Taxa_updated,Acoustic_Category, Abd_Std_nosm3_sp,Weight_Std_gm3_sp) %>%
+  dplyr::group_by(Site, daylight, Depth_Stratum,Deployment) %>% 
+  dplyr::summarise(StdWt = sum(Weight_Std_gm3_sp), 
+                   StdAbd = sum(Abd_Std_nosm3_sp)) %>% 
+  dplyr::ungroup() %>% 
+  mutate(logwt = log(StdWt))
+
+# average biomass for each treatment by Site/daylight/Depth_Stratum
+Biomass_Design <- Biomass_deployment %>% 
+  group_by(Site,daylight,Depth_Stratum) %>% 
+  summarise(StdWt_avg = mean(StdWt),sd = sd(StdWt),no_reps = n()) %>% 
+  ungroup()
+
+#### Acoustic_Category ####################
+# sum biomass for each Acoustic_Category within each deployment
+Biomass_AC <- SOLACE %>% 
+  select(Site, daylight,Depth_Stratum, Deployment, Taxa_updated,Acoustic_Category, Abd_Std_nosm3_sp,Weight_Std_gm3_sp) %>%
+  dplyr::group_by(Site, daylight, Depth_Stratum,Deployment,Acoustic_Category) %>% 
+  dplyr::summarise(StdWt = sum(Weight_Std_gm3_sp), 
+                   StdAbd = sum(Abd_Std_nosm3_sp)) %>% 
+  mutate(StdWt = ifelse(daylight %in% "Night", StdWt*-1, StdWt)) %>% 
+  dplyr::ungroup() 
+# Average biomass for each Acoustic_Category  by Site/daylight/Depth_Stratum
+Biomass_Design_AvgAC <- Biomass_AC %>% 
+  group_by(Site,daylight,Depth_Stratum,Acoustic_Category) %>% 
+  summarise(StdWt_AC = mean(StdWt))
+
+```
+
+---
+
+## Summary Data
+Average biomass by Site/daylight/Depth_Stratum
+```{r Average Biomass, out.width='100%', echo = T}
+
+
+knitr::kable(tail(Biomass_Design, n = 18),caption = "Average Biomass") %>% 
+  kableExtra::kable_styling("striped") %>%
+  kableExtra::scroll_box(width  = "100%")
+```
+
+---
+
+##  Plots
+### Total Average Biomass by Site/daylight/Depth_Stratum
+```{r f.1}, out.width='80%', fig.align='center', fig.cap= "Average biomass by Site, daylight and depth"}
+#biomass by shot
+
+Biomass_Desgin_daynight <- Biomass_Design %>% 
+   mutate(StdWt = ifelse(daylight %in% "Night", StdWt_avg*-1, StdWt_avg)) %>% 
+  mutate(sd = ifelse(daylight %in% "Night", sd*-1, sd)) 
+
+
+tw_avg<-ggplot(Biomass_Desgin_daynight,
+       mapping = aes(x = as.factor(Depth_Stratum),
+                     y = StdWt, fill = daylight))+
+  geom_rect(ymax= -Inf, ymin= 0, xmin=-Inf, xmax=Inf, fill= "grey", alpha= 0.2) +
+      scale_fill_manual(values = c("light blue","dark blue")) +
+  #scale_fill_brewer()+
+  geom_errorbar(aes(ymin = StdWt - sd, ymax= StdWt + sd),
+                width = 0.4, position = position_dodge(0)) +
+geom_col()+
+  geom_hline(yintercept=0)+
+  coord_flip()+
+  facet_grid(Site ~ .,switch = "x")+
+  #theme_bw()
+ labs(y="Total Average Biomass (g/m^3)", x="Depth Stratum") 
+  
+
+tw_avg
+
+```
+
+### Sum of Average Biomass for each Acoustic_Category by Site/daylight/Depth_Stratum
+```{r sutton code with Acat}
+# suttons way
+AC_tw_avg <- ggplot(Biomass_Design_AvgAC,
+       mapping = aes(x = Depth_Stratum ,y=StdWt_AC, fill = Acoustic_Category))+
+     #scale_fill_manual(values = c("purple","orange", "blue","dark blue","light blue","light pink","light green")) +
+  geom_rect(ymax= -Inf, ymin= 0, xmin=-Inf, xmax=Inf, fill= "grey", alpha= 0.2) +
+  geom_col()+
+  #geom_hline(yintercept=0)+
+  coord_flip()+
+  facet_grid(Site ~.,switch = "x")+  
+  labs(x="Depth Stratum", y="Avgerage Biomass g/m^3)") 
+AC_tw_avg
+
+
+# for some reason others don't show up when site labels are on the right side
+AC_tw_avg1 <- ggplot(Biomass_Design_AvgAC,
+       mapping = aes(x = Depth_Stratum ,y=StdWt_AC, fill = Acoustic_Category))+
+     #scale_fill_manual(values = c("purple","orange", "blue","dark blue","light blue", "light pink","light green")) +
+  geom_rect(ymax= -Inf, ymin= 0, xmin=-Inf, xmax=Inf, fill= "grey", alpha= 0.2) +
+  geom_col()+
+  #geom_hline(yintercept=0)+
+  coord_flip()+
+  facet_grid(Site ~.,switch = "y")+  
+  labs(x="Depth Stratum", y="Avgerage Biomass g/m^3)") 
+
+AC_tw_avg1
+```
+
+
+---
+
+### Sum of Average Biomass for Taxa_PLAOS by Site/daylight/Depth_Stratum/Acoustic_Category
+```{r Taxa_PLAOS},out.width='100%', fig.align='center', fig.cap= "Average biomass by Site, daylight and depth"}
+
+# sum biomass for each Taxa_PLAOS within each deployment
+## data wrangling
+Biomass_Taxa_PLAOS <- SOLACE %>% 
+  select(Site, daylight,Depth_Stratum, Deployment, Taxa_updated, Acoustic_Category,Taxa_PLAOS, Abd_Std_nosm3_sp,Weight_Std_gm3_sp) %>%
+  dplyr::group_by(Site, daylight, Depth_Stratum,Deployment,Acoustic_Category,Taxa_PLAOS) %>% 
+  dplyr::summarise(StdWt = sum(Weight_Std_gm3_sp), 
+                   StdAbd = sum(Abd_Std_nosm3_sp)) %>% 
+  mutate(StdWt = ifelse(daylight %in% "Night", StdWt*-1, StdWt)) %>% 
+  dplyr::ungroup() 
+
+# Average biomass for each Taxa_PLAOS  by Site/daylight/Depth_Stratum
+Biomass_Design_AvgTP <- Biomass_Taxa_PLAOS %>% 
+  group_by(Site,daylight,Depth_Stratum,Acoustic_Category,Taxa_PLAOS) %>% 
+  summarise(StdWt_TP = mean(StdWt))
+
+TP_tw_avg <- ggplot(Biomass_Design_AvgTP,
+       mapping = aes(x = Depth_Stratum ,y=StdWt_TP, fill = Taxa_PLAOS))+
+     #scale_fill_manual(values = c("purple","orange", "blue","dark blue","light blue","light pink","light green")) +
+  geom_rect(ymax= -Inf, ymin= 0, xmin=-Inf, xmax=Inf, fill= "grey", alpha= 0.2) +
+  geom_col()+
+  #geom_hline(yintercept=0)+
+  coord_flip()+
+  facet_grid(rows= vars(Site), cols= vars(Acoustic_Category), scales = "free") + 
+  labs(x="Depth Stratum", y="Avgerage Biomass (g/m^3)") +
+  theme(legend.position = "bottom")
+  
+
+TP_tw_avg
+
+```
+```
+
