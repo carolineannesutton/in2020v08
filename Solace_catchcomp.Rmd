@@ -30,8 +30,9 @@ ACatDATA <- read_csv("data/MicroDB_Acat_210916.csv")
 # Standardising Catch Comp Data
 
 ```{r Catch comp}
-CC <- CC %>%  
+ 
   # remove na values
+CC <- CC %>% 
   drop_na(`Accession No`) %>% 
   mutate(Taxa_updated = ifelse(is.na(Taxa_ed),Taxa,Taxa_ed)) %>% 
   # make a column that includes updateded taxa ID
@@ -46,7 +47,7 @@ rename columns and taxa
 # change to uniform names for 'deployment' and 'Accession number' and match species names in length data
 CC <- CC %>% 
   rename(Deployment = 'Operation No', Acc = 'Accession No', Sample_Type = `Sample Type`) %>% 
-  select(Voyage, Deployment,Acc,Acc_ed,Acc_edold,Sample_Type,Taxa,CAAB, Taxa_ed,CAAB_ed, weight_g =`Weight (g)`, Count,Comments,Storage_temp =`Storage temperature`,Preservative,`Container name`,Taxa_updated,CAAB_updated) %>% 
+  select(Voyage, Deployment,Acc,Acc_ed,Acc_edold,Sample_Type,Taxa,CAAB, Taxa_ed,CAAB_ed, weight_g =`Weight (g)`, Count,Comments,Storage_temp =`Storage temperature`,Preservative,`Container name`,Taxa_updated, CAAB_updated) %>% 
   mutate(Acc_ed = as.numeric(Acc_ed)) %>% 
   
   # fix up Taxa_updated field field
@@ -176,12 +177,12 @@ CC_ACATDB <- left_join(CC, ACatDATA_bladder, by = c("Taxa_updated"= "Species_Nam
   mutate(ACat = ifelse(ACat == "Fish_GB", "FGB", ACat)) %>% 
   mutate(ACat = ifelse(ACat == "FSB", "FGB", ACat))
 
-distinct(ccomp_ACATDB,ACat)
+distinct(CC_ACATDB,ACat)
 ```
 
 
 
-#create higher grouping "Taxa_Groups"
+# create higher grouping "Taxa_Groups"
 ```{r creating Taxa_Groups}
 CC_ACATDB_TGroups <- CC_ACATDB %>% 
   mutate(Taxa_Groups = 
@@ -210,14 +211,15 @@ species <- filter(CC_ACATDB_TGroups,Taxa_updated =="Pyrosoma atlanticum")
 ```{r creating Acoustic_Category}
 CC_ACATDB_Acoustic_Category <- CC_ACATDB_TGroups %>% 
   mutate(Acoustic_Category = 
+           ifelse(ACat == "Cephalopod","Ceph",
            ifelse(ACat %in% c("Siphonophore","Ctenophore","Medusa","Chaetognath","Tunicates"), "G_nGB",
            ifelse(ACat %in% c("Siph_physonect"), "G_GB",
                   
            ifelse(ACat%in%c("Crustacean","Prawn","Krill","Amphipods","Gnathaphausia", "Isopods",
-                            "Gnathapahausia","Copepod","Ostracod"),"Crustaceans",
+                            "Gnathapahausia","Copepod","Ostracod"),"Crust",
            ifelse(ACat%in%c("Gymnosome","Pteropod","pelagic gastropod","worms","Other"),"other",
           #ifelse(ACat%in%c("F","FGB"),"F",
-           ACat)))))
+           ACat))))))
 
 
 #checking data
@@ -249,7 +251,8 @@ CC_nosplits <- CC_ACATDB_Acoustic_Category %>%
   filter(Sample_Type == "S") %>% 
   select(Voyage,Deployment,Acc,Acc_ed,ACat,Taxa_Groups,Acoustic_Category, CAAB,Taxa_updated,CAAB_updated,Taxa_updated,Count,weight_g,Storage_temp,Preservative) 
 
-
+CC_nosplits %>% 
+  distinct(Acoustic_Category)
 
 ```
 
@@ -303,16 +306,52 @@ ggplot(data = (filter(Shot_withgps,Depth_Stratum == "Lmeso" |Depth_Stratum=="Mes
   geom_point()+
 facet_grid(~Site)
 
-ggplot(filter(Shot_withgps,Depth_Stratum == "Lmeso" |Depth_Stratum=="Meso" | Depth_Stratum == "Epi"), aes(x=Deployment,colour = Depth_Stratum)) + 
+ggplot(filter(Shot_withgps,Depth_Stratum == "Lmeso" |Depth_Stratum=="Meso" | Depth_Stratum == "Epi"), 
+       aes(x=Deployment,colour = Depth_Stratum)) + 
   geom_point(aes(y=VolumeFiltered_m3_speed, shape="V_speed")) + 
   geom_point(aes(y=VolumeFiltered_m3_gps, shape="V_gps")) 
-```
 
+Shot_withgps <- Shot_withgps %>% 
+  mutate(vdiff = abs(Vdiff_sp_gps))
+
+ggplot(filter(Shot_withgps,Depth_Stratum == "Lmeso" |Depth_Stratum=="Meso" | Depth_Stratum == "Epi"), 
+       aes(x = Deployment, y = vdiff, colour = Depth_Stratum))+
+  geom_point()+
+  scale_x_continuous(breaks = seq(min(Shot_withgps$Deployment),
+                                  max(Shot_withgps$Deployment),
+                                  by = 2))
+
+```
+## fixing the human error wrt to the distance estimated by ship's position. 
+Dave Watts examined the changes in ships speed to estimate the ships position at the beginning and end of suspect tows and made a best estmiate for distance towed. 
+
+tows with the biggest difference b/w distance towed estimates by ships position and speed:
+
+deployments:
+29 best distance estimate = 3284.63
+30 best distance estimate = 1593.13
+42 best distance estimate = 2639.09
+6  best distance estimate = 6123.23
+18 best distance estimate = 1525.95
+28 best distance estimate = 5048.55
+33  best distance estimate = 825.94
+25  best distance estimate = 1537
+1  best distance estimate = 3613.26
+
+```{r}
+Distance_towed_correction <- Shot_withgps %>% 
+  select(Deployment,date_start,lat_decdeg_start, long_decdeg_start,towtime,vdiff,distance_m_byspeed)
+```
 
 # Length Data
 
 ```{r}
 length <- read_csv("data/IN2020_VO8_Lengths.csv")
+
+length <- length %>% 
+  rowid_to_column("ID") %>% 
+  rename(Acc = 'Acc #') %>% 
+  select(-Voyage,-Net_Name)
 ```
 
 ```{r Lengths}
@@ -321,24 +360,21 @@ length <- read_csv("data/IN2020_VO8_Lengths.csv")
 CC_forlengthjoin <- select(CC_nosplits, Deployment, Acc, Acc_ed,Taxa_updated, CAAB_updated)
 
 length <- length %>% 
-  rowid_to_column("ID") %>% 
-  rename(Acc = 'Acc #') %>% 
-  select(-Voyage,-Net_Name) %>% 
-
 # joining length data to the catch comp and site data for graphing
   left_join(CC_forlengthjoin, by = c("Deployment", "Acc")) %>% 
-  distinct(ID, .keep_all = TRUE) %>% 
+  distinct(ID, .keep_all = TRUE)
+
+length <- length %>% 
   left_join(Shot_withgps, by = "Deployment") %>% 
   distinct(ID, .keep_all = TRUE) %>% 
   arrange()
 
-
 # calculate average lengths
+# no records = 1376 
 length_avg <- length %>% 
   rename(length_mm = `Length _mm`) %>% 
   group_by(Deployment,Acc_ed) %>% 
   summarise(n(),AvgL_mm = mean(length_mm))
-
 
 length_Dups <-length[duplicated(length$ID), ]
 
@@ -348,7 +384,8 @@ unique(length$Depth_Stratum)
 
 # filter length data for depth stratified sites only
 #plot length data
-  length_sites <-  select(length, Site, daylight, Depth_Stratum, 
+  length_sites <-  length %>% 
+    select(Site, daylight, Depth_Stratum, 
     Deployment, Acc, Acc_ed, Species,Taxa_updated, 
     `Length _mm`) %>% 
     # filter for depth stratified shots
@@ -358,9 +395,7 @@ unique(length$Depth_Stratum)
     # filter for micronekton 
   filter(`Length _mm`< 5500)
   
-  
 write.csv(length_sites,"Results/IN2020_V08_Lengths.csv")
-
 ```
 
 ## add in the average length data to the catch comp
@@ -370,7 +405,7 @@ CC_nosplits_length <- left_join(CC_nosplits, length_avg, by = c("Deployment", "A
 
 #dupes <- get_dupes(ccomp_2_ACATDB_length
  
-# filter(ccomp_5,Deployment == 39, Acc_ed== 19)
+# filter(ccomp_5,Deployment == 39, Acc_ed == 19)
 
 ```
 
@@ -414,9 +449,9 @@ Sol_Micro_summary$Depth_Stratum <- factor(as.factor(Sol_Micro_summary$Depth_Stra
 ## note that this will now remove the Acc
 ## for example Larval Fish often had two accession numbers - one for F and one for Eth preserved samples
 ## must average the lengths here b/c sometimes there was two length classes for the same species group. 
-# But: 'Salpa thompsoni solitary' and 'Salpa thompsoni aggregate' will remain seperate
+# But: 'Salpa thompsoni solitary' and 'Salpa thompsoni aggregate' will remain separate
 
-## this has resoved the duplciate problem
+### this has resolved the duplicate problem
 
 CC_summary <- CC_nosplits_length %>% 
   group_by(Deployment,ACat,Taxa_Groups,Acoustic_Category,Taxa_updated,CAAB_updated) %>% 
@@ -451,8 +486,11 @@ CC_summary_shot <- CC_summary %>%
          AvgL_mm,
          datetime_UTC_start = date_start,datetime_UTC_stop = date_stop,
          lat_decdeg_start, long_decdeg_start, lat_decdeg_stop, long_decdeg_stop, VolumeFiltered_m3_speed,VolumeFiltered_m3_gps) %>% 
-  #making sure dupicate row are ignored
+  #making sure duplicate rows are ignored
   distinct(ID,.keep_all = TRUE)
+
+# write data
+write.csv(CC_summary_shot,"Results/IN2020_V08_Standardised_withLengths.csv")
 
 ```
   
